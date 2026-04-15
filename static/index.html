@@ -1,222 +1,775 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HR Room · 이력서 요약 및 직무 적합성 분석</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="styles.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>
-      if (window.pdfjsLib) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HR Room · Agentic Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Dancing+Script:wght@700&family=Great+Vibes&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary": "#FF6900",
+          "primary-dark": "#a14000",
+          "surface": "#FDFBFF",
+          "on-surface": "#1B1B1F",
+          "surface-variant": "#E6E1E9",
+          "on-surface-variant": "#49454E",
+          "outline": "#7A757F",
+          "primary-container": "#FFDBCB",
+          "on-primary-container": "#341100",
+          "secondary": "#625B71",
+          "on-secondary": "#FFFFFF",
+          "tertiary": "#7D5260",
+          "error": "#BA1A1A",
+        },
+        fontFamily: {
+          "headline": ["Plus Jakarta Sans", "sans-serif"],
+          "body": ["Inter", "sans-serif"],
+          "signature": ["Dancing Script", "cursive"],
+        },
+        borderRadius: {
+          "DEFAULT": "0.5rem",
+          "lg": "0.5rem",
+          "xl": "1.5rem",
+          "full": "9999px"
+        },
       }
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  </head>
-  <body>
-    <div class="shell">
-      <header class="topbar">
-        <div class="topbar__brand">
-          <span class="topbar__hr">HR Room</span>
-          <span class="topbar__powered">powered by Innovation Support Office</span>
-        </div>
-        <div class="topbar__actions">
-          <button type="button" class="icon-btn" aria-label="알림">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-          </button>
-          <button type="button" class="icon-btn" aria-label="내 프로필">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </button>
-        </div>
-      </header>
+    }
+  }
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
-      <section class="hero-banner" aria-label="소개">
-        <div class="hero-banner__inner">
-          <div class="hero-banner__card">
-            <p class="hero-banner__script">Idea Worth Spreading</p>
-            <p class="hero-banner__sub">Agentic AI Orchestrator 를 추구합니다.</p>
-          </div>
-        </div>
-      </section>
+<style>
+  body { font-family: 'Inter', sans-serif; background-color: #f3f4f5; }
+  h1, h2, h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+  .glass-card {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.85);
+  }
+  .hero-gradient {
+    background: linear-gradient(to bottom,
+      rgba(253,251,255,0.45) 0%,
+      rgba(253,251,255,0.15) 50%,
+      transparent 100%);
+  }
+  .gradient-btn {
+    background: linear-gradient(135deg, #a14000 0%, #FF6900 100%);
+  }
+  .gradient-btn:hover { filter: brightness(1.08); }
+  .surface-card {
+    background: #ffffff;
+    box-shadow: 0 8px 28px rgba(25,28,29,0.06);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .surface-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 36px rgba(25,28,29,0.10);
+  }
+  .surface-card-interactive { cursor: pointer; }
+  .surface-card-coming { opacity: 0.72; cursor: default; }
 
-      <main class="dashboard">
-        <h2 class="dashboard__heading">서비스 허브</h2>
-        <div class="service-grid">
-          <a href="/hr-newsroom.html" class="service-card service-card--link">
-            <div class="service-card__head">
-              <span class="service-card__icon service-card__icon--violet" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-              </span>
-              <span class="service-card__cat">인사 · 조직</span>
-            </div>
-            <h3 class="service-card__title">해외 주재원 파견 Expats</h3>
-            <p class="service-card__desc">
-              해외 주재원 인사 이력·계약·복지를 한 화면에서 관리합니다.
-            </p>
-            <div class="service-card__foot">
-              <span class="service-card__status">현재 파견 4명 · 갱신 알림 1건</span>
-              <span class="service-card__arrow" aria-hidden="true">→</span>
-            </div>
-          </article>
+  /* Pulse animation for agentic status orb */
+  @keyframes pulse-orb {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(0.88); }
+  }
+  .orb-pulse { animation: pulse-orb 2.2s ease-in-out infinite; }
 
-          <article class="service-card service-card--static">
-            <div class="service-card__head">
-              <span class="service-card__icon service-card__icon--mint" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-              </span>
-              <span class="service-card__cat">복지</span>
-            </div>
-            <h3 class="service-card__title">맞춤 복지 큐레이션</h3>
-            <p class="service-card__desc">
-              직원 라이프스테이지에 맞춘 복지·연금 상품을 안내합니다.
-            </p>
-            <div class="service-card__foot">
-              <span class="service-card__status">이번 달 추천 플랜 3건</span>
-              <span class="service-card__arrow" aria-hidden="true">→</span>
-            </div>
-          </article>
+  /* Resume tool panel */
+  #resume-panel {
+    display: none;
+    margin-top: 0;
+    transition: all 0.25s ease;
+  }
+  #resume-panel.open { display: block; }
 
-          <a href="#resume-tool" class="service-card service-card--link">
-            <div class="service-card__head">
-              <span class="service-card__icon service-card__icon--orange" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                  <polyline points="10 9 9 9 8 9" />
-                </svg>
-              </span>
-              <span class="service-card__cat">채용</span>
-            </div>
-            <h3 class="service-card__title">이력서 요약 및 직무 적합성 분석</h3>
-            <p class="service-card__desc">
-              방대한 이력서에서 핵심 역량을 요약하고, 게시된 직무와의 기술·문화 적합도를 다각도로 평가합니다. JD·RAG·LLM
-              파이프라인을 사용합니다.
-            </p>
-            <div class="service-card__foot">
-              <span id="resume-card-status" class="service-card__status">분석 워크스페이스로 이동</span>
-              <span class="service-card__arrow" aria-hidden="true">→</span>
-            </div>
-          </a>
+  /* Score pill styles */
+  .score-high { background: rgba(13,138,91,0.10); color: #0d6b47; border: 1px solid rgba(13,138,91,0.25); }
+  .score-mid  { background: rgba(201,120,0,0.10);  color: #a16400; border: 1px solid rgba(201,120,0,0.25); }
+  .score-low  { background: #f3f4f5; color: #6b7280; border: 1px solid #e0e2e6; }
 
-          <article class="service-card service-card--static">
-            <div class="service-card__head">
-              <span class="service-card__icon service-card__icon--amber" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="1" x2="12" y2="23" />
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
-              </span>
-              <span class="service-card__cat">금융상품</span>
-            </div>
-            <h3 class="service-card__title">사내 금융상품 안내 허브</h3>
-            <p class="service-card__desc">
-              사내 우대 금융·퇴직 설계 상품을 비교합니다.
-            </p>
-            <div class="service-card__foot">
-              <span class="service-card__status">HR 뉴스룸 열기</span>
-              <span class="service-card__arrow" aria-hidden="true">→</span>
-            </div>
-          </a>
-        </div>
+  /* Input focus ring using primary */
+  textarea:focus, input[type="url"]:focus {
+    outline: 2px solid rgba(255,105,0,0.4);
+    outline-offset: 2px;
+  }
 
-        <section id="resume-tool" class="tool-section" tabindex="-1">
-          <div class="tool-section__bar">
-            <div>
-              <p class="tool-section__eyebrow">채용 · Agentic AI</p>
-              <h2 class="tool-section__title">이력서 요약 · 직무 적합성 분석</h2>
-            </div>
-            <p id="api-status" class="api-status" role="status">API 연결 확인 중…</p>
-          </div>
+  /* File input hidden but keyboard accessible */
+  .file-input-hidden {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
 
-          <div class="panel">
-            <section class="card" aria-labelledby="jd-heading">
-              <h2 id="jd-heading" class="card__title">1. 직무 레퍼런스 (JD / 공고 본문)</h2>
-              <p class="card__hint">
-                내부 JD를 붙여 넣거나 URL을 불러와 본문을 합칩니다. 최소 약 120자 이상이어야 분석이 가능합니다.
-              </p>
-              <label class="sr-only" for="jd-text">JD 본문</label>
-              <textarea
-                id="jd-text"
-                class="input input--area"
-                rows="10"
-                spellcheck="false"
-                placeholder="담당 업무, 자격 요건, 우대 사항, 조직 소개 등 직무기술서 또는 공고 전문을 붙여 넣습니다."
-              ></textarea>
-              <p id="jd-status" class="status" role="status"></p>
+  /* RAG chunk preview */
+  .rag-chunk {
+    background: #fff8f4;
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.78rem;
+    color: #6b7280;
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    line-height: 1.45;
+    margin-top: 0.5rem;
+  }
+  .rag-meta {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #FF6900;
+    margin-bottom: 3px;
+    letter-spacing: 0.03em;
+  }
 
-              <div class="url-row">
-                <label class="sr-only" for="ref-url">레퍼런스 URL</label>
-                <input
-                  id="ref-url"
-                  class="input input--inline"
-                  type="url"
-                  placeholder="https://… (직무 소개·채용 공고 페이지)"
-                />
-                <button type="button" id="fetch-url" class="btn btn--secondary">URL 불러오기</button>
-              </div>
-              <p class="card__hint card__hint--tight">일부 사이트는 본문 추출이 제한될 수 있습니다. 그 경우 본문을 복사해 JD 칸에 붙여 주세요.</p>
-            </section>
+  /* API status badge */
+  .api-badge { font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 9999px; }
+  .api-badge--ok  { background: rgba(13,138,91,0.1); color: #0d6b47; }
+  .api-badge--bad { background: rgba(186,26,26,0.1); color: #9b1b1b; }
+  .api-badge--wait { background: rgba(120,114,114,0.1); color: #49454E; }
 
-            <section class="card" aria-labelledby="files-heading">
-              <h2 id="files-heading" class="card__title">2. 이력서 폴더 / 파일</h2>
-              <p class="card__hint">PDF, DOCX, TXT, MD</p>
-              <div class="file-row">
-                <input type="file" id="folder" class="file-input" webkitdirectory multiple accept=".pdf,.docx,.txt,.md,text/plain" />
-                <label for="folder" class="btn btn--secondary">폴더 선택</label>
-                <input type="file" id="files" class="file-input" multiple accept=".pdf,.docx,.txt,.md,text/plain" />
-                <label for="files" class="btn btn--ghost">파일만 선택</label>
-              </div>
-              <p id="file-summary" class="status" role="status"></p>
-            </section>
+  /* Result card */
+  .result-card {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 16px rgba(25,28,29,0.06);
+    margin-bottom: 0.75rem;
+  }
 
-            <div class="actions">
-              <button type="button" id="analyze" class="btn btn--primary" disabled>RAG + LLM 분석 실행</button>
-              <button type="button" id="reset" class="btn btn--ghost">초기화</button>
-            </div>
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+</style>
+</head>
+<body class="text-on-surface min-h-screen">
 
-            <p id="progress" class="progress" aria-live="polite"></p>
-            <p id="error" class="error" role="alert" hidden></p>
-          </div>
-        </section>
-
-        <section id="results" class="results" hidden aria-live="polite">
-          <div class="results__head">
-            <h2 class="results__title">적합도 리스트 (LLM 판정)</h2>
-            <p id="results-meta" class="results__meta"></p>
-          </div>
-          <ol id="result-list" class="result-list"></ol>
-        </section>
-      </main>
-
-      <footer class="site-footer">
-        <p class="site-footer__legal">© 2026 Hanwha Investment &amp; Securities Co., Ltd. All rights reserved.</p>
-        <p class="site-footer__hint">
-          로컬 실행: <code>pip install -r requirements.txt</code> · <code>python server.py</code> ·
-          <code>OPENAI_API_KEY</code> (<code>.env</code>)
-        </p>
-      </footer>
+<!-- ═══════════════════════════ TOP APP BAR ═══════════════════════════ -->
+<header class="fixed top-0 left-0 right-0 h-16 z-50 bg-white/90 backdrop-blur-xl flex items-center justify-between px-8"
+        style="box-shadow: 0 1px 0 rgba(25,28,29,0.06)">
+  <div class="flex items-center gap-3">
+    <h2 class="text-lg font-extrabold text-primary tracking-tight font-headline">HR Room</h2>
+    <span class="text-xs font-semibold text-gray-400 hidden sm:inline">powered by Innovation Support Office</span>
+  </div>
+  <div class="flex items-center gap-3">
+    <span id="global-api-badge" class="api-badge api-badge--wait">연결 확인 중…</span>
+    <span class="material-symbols-outlined text-gray-400 cursor-pointer text-2xl">notifications</span>
+    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-200 to-orange-400 flex items-center justify-center">
+      <span class="material-symbols-outlined text-white text-base">person</span>
     </div>
-    <script src="app.js"></script>
-  </body>
+  </div>
+</header>
+
+<!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
+<main class="min-h-screen pt-16">
+
+  <!-- ── Hero ── -->
+  <section class="relative h-[420px] flex items-center justify-center overflow-hidden">
+    <img alt="Cherry blossoms in full bloom"
+         class="absolute inset-0 w-full h-full object-cover"
+         src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqgF86D5F5BP2zx9VmoZon0G8h58JlmK1NkJPtYbnFxm2DbopUx0osumtUcfZRvPznKv3I2UWvH54w_qBUYB9ZpCvZsmvBr7mBfcqcvAI2FtHOoQTtaL1ulUr915LhFsACAoFRvJK09kkfjcdP7_UoqaQC7eBIFkfqn9gpDEAR7H2MqbifEPphjw2TTUg1QIAKvsuKQafpiLl0tkZGYDihW3_-x3U62Ru9zA7WaC-wxUTkoz6irC8MnxFxxf1nhKE9l3MzWFUcUNCI"/>
+    <div class="absolute inset-0 hero-gradient"></div>
+    <div class="relative z-10 text-center glass-card px-14 py-10 rounded-2xl shadow-xl">
+      <h1 class="font-signature text-primary text-5xl md:text-6xl opacity-95 select-none leading-tight">Idea Worth Spreading</h1>
+      <div class="w-14 h-0.5 bg-primary/30 mx-auto mt-5 rounded-full"></div>
+      <p class="mt-4 text-slate-600 font-semibold tracking-wide text-sm">Agentic AI Orchestrator 를 추구합니다.</p>
+    </div>
+  </section>
+
+  <!-- ── Page Canvas ── -->
+  <div class="px-6 md:px-10 max-w-7xl mx-auto -mt-16 relative z-20 pb-24">
+
+    <!-- ── Service Cards Grid ── -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+      <!-- 에이전트 배지 공통 스타일 인라인 -->
+      <!-- 1. 학자금 — Agent Sophie -->
+      <div class="surface-card rounded-2xl p-8" style="cursor:default">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary text-3xl">school</span>
+          </div>
+          <div class="flex flex-col items-end gap-1.5">
+            <span class="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full">복리후생</span>
+            <span class="text-xs font-bold px-3 py-1 rounded-full" style="background:rgba(255,105,0,0.09);color:#FF6900">✦ Agent Sophie</span>
+          </div>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-3 font-headline">학자금·경조금 신청 분석</h3>
+        <p class="text-slate-500 text-sm leading-relaxed mb-6" style="word-break:keep-all">학자금·경조금 신청을 Sophie가 자동 분석합니다.<br>규정 적격성·한도·중복 여부를 즉시 판정하고 기안문을 생성합니다.</p>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-2 h-2 rounded-full bg-primary orb-pulse"></div>
+          <span class="text-xs font-semibold text-slate-400">Sophie 심사 엔진 활성</span>
+        </div>
+        <div class="flex gap-3" style="border-top: 1px solid #f3f4f5; padding-top: 16px">
+          <a href="/tuition/pages/inbox.html"
+             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+             style="background: linear-gradient(135deg, #a14000, #FF6900); box-shadow: 0 4px 14px rgba(255,105,0,0.25); text-decoration:none;"
+             onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">
+            <span class="material-symbols-outlined" style="font-size:17px">inbox</span>관리자 인박스
+          </a>
+          <a href="/tuition/pages/apply.html"
+             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all"
+             style="background:#fff;border:1.5px solid #e5e7eb;color:#49454E;text-decoration:none;"
+             onmouseover="this.style.background='#fff8f4';this.style.borderColor='#FF6900';this.style.color='#FF6900'"
+             onmouseout="this.style.background='#fff';this.style.borderColor='#e5e7eb';this.style.color='#49454E'">
+            <span class="material-symbols-outlined" style="font-size:17px">upload_file</span>직원 신청
+          </a>
+        </div>
+      </div>
+
+      <!-- 2. Ellis in Wonderland — Agent Ellis -->
+      <a href="/ellis.html" class="surface-card surface-card-interactive rounded-2xl p-8 block group" style="text-decoration:none">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-14 h-14 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#f0f4ff,#e8edff)">
+            <span class="material-symbols-outlined text-3xl" style="color:#4f46e5">psychology</span>
+          </div>
+          <div class="flex flex-col items-end gap-1.5">
+            <span class="text-xs font-bold px-3 py-1 rounded-full" style="background:#f0f0ff;color:#4f46e5">Feedback</span>
+            <span class="text-xs font-bold px-3 py-1 rounded-full" style="background:rgba(79,70,229,0.09);color:#4f46e5">✦ Agent Ellis</span>
+          </div>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-1 font-headline" style="font-family:'Dancing Script',cursive;font-size:1.4rem">Ellis in Wonderland</h3>
+        <p class="text-xs font-bold mb-3" style="color:#4f46e5">Feedback Analysis</p>
+        <p class="text-slate-500 text-sm leading-relaxed mb-6" style="word-break:keep-all">팀장이 팀원에게 준 피드백을 5개 축으로 분석합니다.<br>객관성·공정성·균형성·일관성·문화 적합성을 지표화합니다.</p>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-2 h-2 rounded-full orb-pulse" style="background:#4f46e5"></div>
+          <span class="text-xs font-semibold" style="color:#4f46e5">Ellis 분석 엔진 활성</span>
+        </div>
+        <!-- 원더랜드 입장 버튼 -->
+        <div style="border-top:1px solid #f3f4f5;padding-top:16px">
+          <div class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+               style="background:linear-gradient(135deg,#312e81,#4f46e5);box-shadow:0 4px 14px rgba(79,70,229,0.28);">
+            <span>🐇</span>
+            원더랜드 입장
+          </div>
+        </div>
+      </a>
+
+      <!-- 3. 이력서 직무 적합성 — Agent Remy -->
+      <div onclick="toggleResumeTool()"
+           class="surface-card surface-card-interactive rounded-2xl p-8 group cursor-pointer" id="resume-card">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-14 h-14 rounded-xl flex items-center justify-center" style="background: #F3E8FF">
+            <span class="material-symbols-outlined text-3xl" style="color: #625B71">person_search</span>
+          </div>
+          <div class="flex flex-col items-end gap-1.5">
+            <span class="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full">채용</span>
+            <span class="text-xs font-bold px-3 py-1 rounded-full" style="background:rgba(98,91,113,0.09);color:#625B71">✦ Agent Remy</span>
+          </div>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-3 font-headline">이력서 요약 및 직무 적합성 분석</h3>
+        <p class="text-slate-500 text-sm leading-relaxed mb-8" style="word-break:keep-all">Remy가 이력서를 핵심 역량 중심으로 자동 요약하고<br>RAG + LLM으로 직무 기술·문화 적합성을 다각도 평가합니다.</p>
+        <div class="flex items-center justify-between pt-4 mt-auto" style="border-top: 1px solid #f8f9fa">
+          <div class="flex items-center gap-2">
+            <div id="resume-orb" class="w-2 h-2 rounded-full bg-gray-300"></div>
+            <span id="resume-card-status" class="text-xs font-semibold text-slate-400">클릭하여 분석 워크스페이스 열기</span>
+          </div>
+          <span id="resume-card-arrow" class="material-symbols-outlined text-slate-300 group-hover:text-secondary transition-colors">expand_more</span>
+        </div>
+      </div>
+
+      <!-- 4. HR News — Agent Eddy -->
+      <div class="surface-card rounded-2xl p-8" style="cursor:default">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-14 h-14 rounded-xl flex items-center justify-center" style="background: #ECFDF5">
+            <span class="material-symbols-outlined text-3xl" style="color:#059669">newspaper</span>
+          </div>
+          <div class="flex flex-col items-end gap-1.5">
+            <span class="text-xs font-bold px-3 py-1 rounded-full" style="background:#ECFDF5;color:#059669">노무·HR 뉴스</span>
+            <span class="text-xs font-bold px-3 py-1 rounded-full" style="background:rgba(5,150,105,0.09);color:#059669">✦ Agent Eddy</span>
+          </div>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-3 font-headline">HR News</h3>
+        <p class="text-slate-500 text-sm leading-relaxed mb-6" style="word-break:keep-all">Eddy가 노무·채용·교육 조간 브리핑, 역량개발 교육 추천,<br>HR·AI 컨퍼런스 일정을 큐레이션합니다.</p>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-2 h-2 rounded-full orb-pulse" style="background:#059669"></div>
+          <span class="text-xs font-semibold" style="color:#059669;font-weight:700">뉴스 에이전틱 Eddy 풀가동!</span>
+        </div>
+        <div style="border-top:1px solid #f3f4f5;padding-top:16px">
+          <a href="/hr-newsroom.html"
+             class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+             style="background:linear-gradient(135deg,#065f46,#059669);box-shadow:0 4px 14px rgba(5,150,105,0.25);text-decoration:none;"
+             onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">
+            <span class="material-symbols-outlined" style="font-size:17px">open_in_new</span>HR News 열기
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         RESUME ANALYSIS INLINE PANEL (shown/hidden on card click)
+    ════════════════════════════════════════════════════════════ -->
+    <div id="resume-panel" class="rounded-2xl overflow-hidden mb-6" style="box-shadow: 0 20px 40px rgba(25,28,29,0.07)">
+
+      <!-- Panel Header (glass) -->
+      <div class="flex items-center justify-between px-8 py-5"
+           style="background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(25,28,29,0.05)">
+        <div>
+          <p class="text-xs font-bold tracking-widest uppercase text-primary mb-0.5">채용 · Agentic AI</p>
+          <h2 class="text-xl font-extrabold font-headline text-slate-900 m-0">이력서 요약 · 직무 적합성 분석</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="api-status-badge" class="api-badge api-badge--wait">API 확인 중…</span>
+          <button onclick="toggleResumeTool()"
+                  class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors text-slate-500">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Panel Body -->
+      <div class="bg-white px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+          <!-- JD Input -->
+          <div class="rounded-xl p-6" style="background: #f8f9fa">
+            <h3 class="text-sm font-extrabold text-slate-800 mb-1">1. 직무 레퍼런스 (JD / 공고 본문)</h3>
+            <p class="text-xs text-slate-400 mb-4">내부 JD를 붙여 넣거나 URL 로 불러와 본문을 합칩니다. 최소 120자 이상이어야 분석이 가능합니다.</p>
+            <textarea id="jd-text" rows="9" spellcheck="false"
+              placeholder="담당 업무, 자격 요건, 우대 사항, 조직 소개 등 직무기술서 또는 공고 전문을 붙여 넣습니다."
+              class="w-full rounded-xl p-3.5 text-sm text-slate-700 resize-y min-h-[160px]"
+              style="background: #fff; border: none; box-shadow: 0 2px 8px rgba(25,28,29,0.06); outline: none; font-family: 'Inter', sans-serif; line-height: 1.6;"
+              onfocus="this.style.boxShadow='0 0 0 2px rgba(255,105,0,0.35)'"
+              onblur="this.style.boxShadow='0 2px 8px rgba(25,28,29,0.06)'"
+              oninput="updateJdStatus()"></textarea>
+            <p id="jd-status" class="text-xs text-slate-400 mt-2 min-h-[1.2em]"></p>
+
+            <div class="flex gap-2 mt-3">
+              <input id="ref-url" type="url" placeholder="https://… (직무 소개·채용 공고 페이지)"
+                class="flex-1 rounded-xl px-3.5 py-2.5 text-sm text-slate-700"
+                style="background: #fff; border: none; box-shadow: 0 2px 8px rgba(25,28,29,0.06); font-family: 'Inter', sans-serif;"
+                onfocus="this.style.boxShadow='0 0 0 2px rgba(255,105,0,0.35)'"
+                onblur="this.style.boxShadow='0 2px 8px rgba(25,28,29,0.06)'"/>
+              <button id="fetch-url-btn"
+                class="px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 transition-colors"
+                style="background: #fff; box-shadow: 0 2px 8px rgba(25,28,29,0.06);"
+                onmouseover="this.style.background='#fff8f4'"
+                onmouseout="this.style.background='#fff'"
+                onclick="fetchUrl()">URL 불러오기</button>
+            </div>
+            <p class="text-xs text-slate-400 mt-2">일부 사이트는 본문 추출이 제한될 수 있습니다.</p>
+          </div>
+
+          <!-- File Input -->
+          <div class="rounded-xl p-6" style="background: #f8f9fa">
+            <h3 class="text-sm font-extrabold text-slate-800 mb-1">2. 이력서 폴더 / 파일</h3>
+            <p class="text-xs text-slate-400 mb-4">PDF, DOCX, TXT, MD 지원 · 폴더 또는 개별 파일 선택</p>
+
+            <div class="flex flex-col gap-3">
+              <input type="file" id="folder-input" class="file-input-hidden" webkitdirectory multiple accept=".pdf,.docx,.txt,.md"/>
+              <label for="folder-input"
+                class="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-slate-700 cursor-pointer transition-colors w-fit"
+                style="background: #fff; box-shadow: 0 2px 8px rgba(25,28,29,0.06);"
+                onmouseover="this.style.background='#fff8f4'"
+                onmouseout="this.style.background='#fff'">
+                <span class="material-symbols-outlined text-primary text-xl">folder_open</span>
+                폴더 선택
+              </label>
+
+              <input type="file" id="files-input" class="file-input-hidden" multiple accept=".pdf,.docx,.txt,.md"/>
+              <label for="files-input"
+                class="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-slate-500 cursor-pointer transition-colors w-fit"
+                style="background: transparent; border: 1.5px dashed #d1d5db;"
+                onmouseover="this.style.background='#f8f9fa'"
+                onmouseout="this.style.background='transparent'">
+                <span class="material-symbols-outlined text-slate-400 text-xl">attach_file</span>
+                파일만 선택
+              </label>
+            </div>
+
+            <p id="file-summary" class="text-xs text-slate-400 mt-4 min-h-[1.2em]"></p>
+
+            <!-- Selected files list -->
+            <div id="file-list" class="mt-3 space-y-1.5 max-h-[160px] overflow-y-auto"></div>
+
+            <!-- AI Agent Tip (handwritten accent) -->
+            <div class="mt-4 p-3 rounded-xl" style="background: rgba(255,105,0,0.05)">
+              <p class="text-xs text-primary font-signature text-base leading-snug">Agent's Tip</p>
+              <p class="text-xs text-slate-500 mt-0.5">PDF · DOCX 모두 지원합니다. 이력서를 폴더째 넣으면 일괄 분석이 됩니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Row -->
+        <div class="flex items-center gap-4 mb-4">
+          <button id="analyze-btn"
+            class="gradient-btn text-white font-bold text-sm px-7 py-3 rounded-full flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled onclick="runAnalysis()">
+            <span class="material-symbols-outlined text-xl">psychology</span>
+            RAG + LLM 분석 실행
+          </button>
+          <button onclick="resetTool()"
+            class="text-sm font-semibold text-slate-400 hover:text-slate-600 px-4 py-3 rounded-full transition-colors"
+            style="border: 1.5px solid #e5e7eb">
+            초기화
+          </button>
+        </div>
+
+        <!-- Progress & Error -->
+        <p id="progress-msg" class="text-sm text-slate-400 min-h-[1.3em] mb-2"></p>
+        <div id="error-msg" class="hidden text-sm text-red-700 rounded-xl px-4 py-3 mb-4"
+             style="background: rgba(186,26,26,0.06); border: 1px solid rgba(186,26,26,0.18)"></div>
+
+        <!-- Results -->
+        <section id="results-section" class="hidden mt-6">
+          <div class="flex items-baseline justify-between mb-4">
+            <h3 class="text-base font-extrabold font-headline text-slate-900">적합도 리스트 (LLM 판정)</h3>
+            <p id="results-meta" class="text-xs text-slate-400"></p>
+          </div>
+          <ol id="result-list" class="space-y-3 list-none p-0 m-0"></ol>
+        </section>
+      </div>
+    </div>
+
+    <!-- ── Footer ── -->
+    <div class="mt-16 flex flex-col items-center">
+      <div class="w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mb-6"></div>
+      <p class="text-slate-400 text-xs">© 2026 Hanwha Investment &amp; Securities Co., Ltd. All rights reserved.</p>
+      <p class="text-slate-300 text-xs mt-1">HR Room Dashboard · 이력서 직무핏 서버: <code class="bg-slate-50 px-1.5 py-0.5 rounded text-slate-400">python server.py</code> (port 8765) · LLM: Claude · RAG: TF-IDF (local)</p>
+    </div>
+  </div>
+</main>
+
+
+<!-- ═══════════════════════════ JAVASCRIPT ═══════════════════════════ -->
+<script>
+(function() {
+  /* ─────────── Constants ─────────── */
+  const RESUME_API_BASE = 'http://127.0.0.1:8765';
+  const MIN_JD = 120;
+  const SUPPORTED = /\.(pdf|docx|txt|md)$/i;
+
+  /* ─────────── State ─────────── */
+  let selectedFiles = [];
+  let apiReady = false;
+  let panelOpen = false;
+  let healthChecked = false;
+
+  /* ─────────── DOM refs ─────────── */
+  const globalBadge      = document.getElementById('global-api-badge');
+  const apiBadge         = document.getElementById('api-status-badge');
+  const jdEl             = document.getElementById('jd-text');
+  const jdStatusEl       = document.getElementById('jd-status');
+  const refUrlEl         = document.getElementById('ref-url');
+  const folderEl         = document.getElementById('folder-input');
+  const filesEl          = document.getElementById('files-input');
+  const fileSummaryEl    = document.getElementById('file-summary');
+  const fileListEl       = document.getElementById('file-list');
+  const analyzeBtn       = document.getElementById('analyze-btn');
+  const progressEl       = document.getElementById('progress-msg');
+  const errorEl          = document.getElementById('error-msg');
+  const resultsSection   = document.getElementById('results-section');
+  const resultsMetaEl    = document.getElementById('results-meta');
+  const resultListEl     = document.getElementById('result-list');
+  const resumeCardStatus = document.getElementById('resume-card-status');
+  const resumeOrb        = document.getElementById('resume-orb');
+  const resumeArrow      = document.getElementById('resume-card-arrow');
+
+  /* ─────────── API health check ─────────── */
+  async function checkHealth() {
+    try {
+      const r = await fetch(RESUME_API_BASE + '/api/health', { signal: AbortSignal.timeout(3000) });
+      const h = await r.json();
+      if (h.openai_configured) {
+        apiReady = true;
+        setApiBadge('ok', '이력서 분석 서버 연결됨 · Claude ' + (h.model || ''));
+        setGlobalBadge('ok', '서버 연결됨');
+        resumeOrb.className = 'w-2 h-2 rounded-full bg-primary orb-pulse';
+        resumeCardStatus.textContent = '분석 워크스페이스 열기 · 서버 활성';
+      } else {
+        apiReady = false;
+        setApiBadge('bad', 'ANTHROPIC_API_KEY 미설정 — .env 확인');
+        setGlobalBadge('bad', 'API 키 없음');
+      }
+    } catch {
+      apiReady = false;
+      setApiBadge('bad', '이력서 서버 오프라인');
+      setGlobalBadge('bad', '이력서 서버 미실행');
+      resumeCardStatus.textContent = '서버 오프라인 · python server.py 실행 필요';
+    }
+    healthChecked = true;
+    syncAnalyzeEnabled();
+  }
+
+  function setApiBadge(state, text) {
+    apiBadge.textContent = text;
+    apiBadge.className = 'api-badge api-badge--' + (state === 'ok' ? 'ok' : state === 'bad' ? 'bad' : 'wait');
+  }
+
+  function setGlobalBadge(state, text) {
+    globalBadge.textContent = text;
+    globalBadge.className = 'api-badge api-badge--' + (state === 'ok' ? 'ok' : state === 'bad' ? 'bad' : 'wait');
+  }
+
+  /* ─────────── Panel toggle ─────────── */
+  window.toggleResumeTool = function() {
+    const panel = document.getElementById('resume-panel');
+    panelOpen = !panelOpen;
+    if (panelOpen) {
+      panel.classList.add('open');
+      resumeArrow.textContent = 'expand_less';
+      setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      if (!healthChecked) checkHealth();
+    } else {
+      panel.classList.remove('open');
+      resumeArrow.textContent = 'expand_more';
+    }
+  };
+
+  /* ─────────── JD status ─────────── */
+  window.updateJdStatus = function() {
+    const n = jdEl.value.trim().length;
+    if (n === 0) {
+      jdStatusEl.textContent = `JD 본문을 입력하거나 URL 로 불러오세요. (최소 ${MIN_JD}자 권장)`;
+    } else if (n < MIN_JD) {
+      jdStatusEl.textContent = `${n.toLocaleString()}자 · 최소 ${MIN_JD}자 이상으로 보강해 주세요.`;
+    } else {
+      jdStatusEl.textContent = `${n.toLocaleString()}자 · 레퍼런스 준비됨.`;
+    }
+    syncAnalyzeEnabled();
+  };
+
+  /* ─────────── Sync analyze button ─────────── */
+  function syncAnalyzeEnabled() {
+    const jdOk = jdEl.value.trim().length >= MIN_JD;
+    analyzeBtn.disabled = !apiReady || !jdOk || selectedFiles.length === 0;
+  }
+
+  /* ─────────── File selection ─────────── */
+  function setFiles(fileList) {
+    const arr = Array.from(fileList || []).filter(f => SUPPORTED.test(f.name));
+    selectedFiles = arr;
+    if (arr.length === 0) {
+      fileSummaryEl.textContent = '지원 형식(PDF, DOCX, TXT, MD) 파일을 선택하세요.';
+      fileListEl.innerHTML = '';
+    } else {
+      fileSummaryEl.textContent = `${arr.length}개 파일 선택됨`;
+      fileListEl.innerHTML = arr.map(f => `
+        <div class="flex items-center gap-2 text-xs text-slate-500 bg-white rounded-lg px-3 py-1.5" style="box-shadow: 0 1px 4px rgba(25,28,29,0.06)">
+          <span class="material-symbols-outlined text-primary text-base">description</span>
+          <span class="truncate">${escHtml(f.name)}</span>
+          <span class="ml-auto text-slate-300 shrink-0">${(f.size/1024).toFixed(0)} KB</span>
+        </div>`).join('');
+      resumeCardStatus.textContent = `이력서 ${arr.length}건 선택됨 · 분석 준비 완료`;
+    }
+    syncAnalyzeEnabled();
+  }
+
+  folderEl.addEventListener('change', e => { filesEl.value = ''; setFiles(e.target.files); });
+  filesEl.addEventListener('change', e => { folderEl.value = ''; setFiles(e.target.files); });
+  jdEl.addEventListener('input', updateJdStatus);
+
+  /* ─────────── URL fetch ─────────── */
+  window.fetchUrl = async function() {
+    const url = refUrlEl.value.trim();
+    if (!url) { showError('URL을 입력하세요.'); return; }
+    showError('');
+    const btn = document.getElementById('fetch-url-btn');
+    btn.disabled = true;
+    setProgress('URL 에서 본문을 가져오는 중…');
+    try {
+      const data = await apiPost('/api/fetch-reference', { url });
+      const block = data.text.trim();
+      const header = data.title ? `【${data.title}】\n\n` : '';
+      const merged = (jdEl.value.trim() ? jdEl.value.trim() + '\n\n---\n\n' : '') + header + block;
+      jdEl.value = merged.trim();
+      updateJdStatus();
+      setProgress('URL 본문을 JD 칸에 반영했습니다.');
+    } catch(e) {
+      showError(e.message || 'URL 불러오기 실패');
+      setProgress('');
+    }
+    btn.disabled = false;
+  };
+
+  /* ─────────── Analysis ─────────── */
+  window.runAnalysis = async function() {
+    showError('');
+    const jd = jdEl.value.trim();
+    if (jd.length < MIN_JD) { showError(`JD 본문이 너무 짧습니다. (${MIN_JD}자 이상)`); return; }
+    if (!apiReady) { showError('백엔드 또는 OpenAI 설정을 확인하세요.'); return; }
+    if (selectedFiles.length === 0) { showError('이력서 파일을 먼저 선택하세요.'); return; }
+
+    analyzeBtn.disabled = true;
+    resultsSection.classList.add('hidden');
+    const total = selectedFiles.length;
+
+    const resumes = [];
+    for (let i = 0; i < total; i++) {
+      const file = selectedFiles[i];
+      setProgress(`텍스트 추출 ${i+1}/${total} — ${file.name}`);
+      let text = '';
+      try { text = await extractText(file); } catch(e) { console.warn(e); }
+      resumes.push({ filename: file.name, text });
+    }
+
+    setProgress('RAG + LLM 스코어링 요청 중… (지원자 수에 따라 수 분 소요)');
+    try {
+      const payload = await apiPost('/api/score-resumes', { jd_text: jd, resumes, top_k: 5 });
+      renderResults(payload);
+      setProgress(`완료. 총 ${payload.results.length}명 분석됨.`);
+    } catch(e) {
+      showError(e.message || '분석 요청 실패');
+      setProgress('');
+    }
+    analyzeBtn.disabled = false;
+    syncAnalyzeEnabled();
+  };
+
+  /* ─────────── Render results ─────────── */
+  function renderResults(payload) {
+    const meta = payload.meta || {};
+    const rows = payload.results || [];
+    resultListEl.innerHTML = '';
+
+    for (const row of rows) {
+      const score = row.score || 0;
+      const pillClass = score >= 60 ? 'score-high' : score >= 35 ? 'score-mid' : 'score-low';
+      const strengthsHtml = (row.strengths || []).map(s => `<li>${escHtml(s)}</li>`).join('') || '<li>(없음)</li>';
+      const gapsHtml = (row.gaps || []).map(g => `<li>${escHtml(g)}</li>`).join('') || '<li>(없음)</li>';
+      const ptsHtml = (row.matched_reference_points || []).map(p => `<li>${escHtml(p)}</li>`).join('') || '<li>(없음)</li>';
+      const chunksHtml = ((row.rag && row.rag.chunks) || []).map(c =>
+        `<div class="rag-chunk"><span class="rag-meta">#${c.index+1} · 유사도 ${c.similarity ?? ''}</span>${escHtml(c.preview || '')}</div>`
+      ).join('') || '<div class="rag-chunk">(발췌 없음)</div>';
+
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <div class="result-card">
+          <div class="flex items-start justify-between gap-4 mb-3">
+            <div>
+              <h4 class="font-extrabold text-slate-900 text-base font-headline mb-0.5">${escHtml(row.display_name || row.filename)}</h4>
+              <p class="text-xs text-slate-400 font-mono">${escHtml(row.filename)}</p>
+            </div>
+            <span class="shrink-0 px-4 py-2 rounded-full text-sm font-extrabold ${pillClass}">LLM ${score}</span>
+          </div>
+          <p class="text-sm font-bold mb-1" style="color: #FF6900">${escHtml(row.verdict || '')}</p>
+          <p class="text-sm text-slate-500 mb-4 leading-relaxed">${escHtml(row.summary || '')}</p>
+          <div class="grid grid-cols-2 gap-4 mb-3">
+            <div>
+              <p class="text-xs font-extrabold uppercase tracking-widest text-slate-400 mb-1.5">강점</p>
+              <ul class="text-sm text-slate-500 space-y-1 pl-4">${strengthsHtml}</ul>
+            </div>
+            <div>
+              <p class="text-xs font-extrabold uppercase tracking-widest text-slate-400 mb-1.5">보완·리스크</p>
+              <ul class="text-sm text-slate-500 space-y-1 pl-4">${gapsHtml}</ul>
+            </div>
+          </div>
+          <div class="mb-3">
+            <p class="text-xs font-extrabold uppercase tracking-widest text-slate-400 mb-1.5">레퍼런스와의 접점</p>
+            <ul class="text-sm text-slate-500 space-y-1 pl-4">${ptsHtml}</ul>
+          </div>
+          <details class="mt-2">
+            <summary class="text-xs font-bold text-slate-500 cursor-pointer select-none">RAG 로 선택된 JD 발췌 (유사도)</summary>
+            ${chunksHtml}
+          </details>
+        </div>`;
+      resultListEl.appendChild(li);
+    }
+
+    resultsMetaEl.textContent = `총 ${rows.length}명 · JD ${(meta.jd_chars||0).toLocaleString()}자 · 청크 ${meta.chunk_count??'?'} · ${meta.embed_model||''} · ${meta.chat_model||''}`;
+    resultsSection.classList.remove('hidden');
+    setTimeout(() => resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+
+  /* ─────────── Reset ─────────── */
+  window.resetTool = function() {
+    jdEl.value = '';
+    refUrlEl.value = '';
+    folderEl.value = '';
+    filesEl.value = '';
+    selectedFiles = [];
+    fileSummaryEl.textContent = '';
+    fileListEl.innerHTML = '';
+    setProgress('');
+    showError('');
+    resultsSection.classList.add('hidden');
+    resultListEl.innerHTML = '';
+    updateJdStatus();
+    resumeCardStatus.textContent = '클릭하여 분석 워크스페이스 열기';
+  };
+
+  /* ─────────── Helpers ─────────── */
+  function setProgress(msg) { progressEl.textContent = msg; }
+  function showError(msg) {
+    if (!msg) { errorEl.classList.add('hidden'); errorEl.textContent = ''; return; }
+    errorEl.classList.remove('hidden');
+    errorEl.textContent = msg;
+  }
+  function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function apiPost(path, body) {
+    const r = await fetch(RESUME_API_BASE + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const text = await r.text();
+    if (!r.ok) {
+      let msg = text;
+      try { const j = JSON.parse(text); if (j.detail) msg = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail); } catch {}
+      throw new Error(msg || `HTTP ${r.status}`);
+    }
+    return JSON.parse(text);
+  }
+
+  /* ─────────── Text extractors ─────────── */
+  async function extractText(file) {
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.txt') || name.endsWith('.md')) return readAsText(file);
+    if (name.endsWith('.pdf')) return readPdf(file);
+    if (name.endsWith('.docx')) return readDocx(file);
+    return '';
+  }
+  function readAsText(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(String(r.result || ''));
+      r.onerror = () => rej(r.error);
+      r.readAsText(file, 'UTF-8');
+    });
+  }
+  async function readPdf(file) {
+    if (!window.pdfjsLib) throw new Error('PDF.js 를 불러오지 못했습니다.');
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    const parts = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const ct = await page.getTextContent();
+      parts.push(ct.items.map(it => it.str).join(' '));
+    }
+    return parts.join('\n');
+  }
+  async function readDocx(file) {
+    if (!window.mammoth) throw new Error('Mammoth.js 를 불러오지 못했습니다.');
+    const buf = await file.arrayBuffer();
+    const { value } = await mammoth.extractRawText({ arrayBuffer: buf });
+    return value || '';
+  }
+
+  /* ─────────── Init ─────────── */
+  updateJdStatus();
+  // Check health on page load (non-blocking, for global badge)
+  checkHealth();
+})();
+</script>
+
+</body>
 </html>
