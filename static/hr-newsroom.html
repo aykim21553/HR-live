@@ -203,9 +203,123 @@
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     .empty { text-align: center; padding: 28px; color: var(--so); font-size: 13px; }
     .section-wrap { margin-bottom: 28px; }
-  </style>
+  
+/* ══ Newspaper Loading Animation ══ */
+.news-loading-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#fffbf0 0%,#fff8e8 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:24px;
+}
+.newspaper-scene{
+  width:200px;height:260px;perspective:600px;position:relative;
+}
+.newspaper-book{
+  width:100%;height:100%;position:relative;transform-style:preserve-3d;
+}
+.np-page{
+  position:absolute;width:50%;height:100%;top:0;right:0;
+  background:#faf9f0;border:1px solid #e0d9c0;
+  transform-origin:left center;transform-style:preserve-3d;
+  backface-visibility:hidden;
+  box-shadow:2px 0 8px rgba(0,0,0,0.08);
+}
+.np-page.p1{animation:flip1 2.4s ease-in-out infinite;}
+.np-page.p2{animation:flip2 2.4s ease-in-out 0.4s infinite;}
+.np-page.p3{animation:flip3 2.4s ease-in-out 0.8s infinite;}
+.np-spine{
+  position:absolute;left:50%;top:0;width:4px;height:100%;
+  background:linear-gradient(to right,#c9b97a,#e8d99a);
+  transform:translateX(-50%);border-radius:2px;z-index:10;
+}
+.np-left{
+  position:absolute;width:50%;height:100%;left:0;
+  background:#faf9f0;border:1px solid #e0d9c0;
+  display:flex;flex-direction:column;padding:12px 8px;gap:5px;
+}
+.np-title{font-size:9px;font-weight:900;color:#1B1B1F;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid #1B1B1F;padding-bottom:4px;margin-bottom:2px;}
+.np-line{height:3px;background:#d1c9a0;border-radius:2px;}
+.np-line.s{width:60%;}
+.np-line.m{width:80%;}
+.np-cols{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px;}
+.np-col-line{height:2px;background:#e0d9c0;border-radius:1px;}
+.np-img{width:100%;height:28px;background:#e8d9a0;border-radius:2px;margin-top:2px;}
+.np-loading-text{
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;
+  color:#49454E;text-align:center;
+}
+.np-dots span{
+  display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:#FF6900;margin:0 2px;
+  animation:dot-bounce 1.2s ease-in-out infinite;
+}
+.np-dots span:nth-child(2){animation-delay:.2s;}
+.np-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes flip1{
+  0%,15%{transform:rotateY(0deg);}
+  40%,60%{transform:rotateY(-160deg);}
+  85%,100%{transform:rotateY(0deg);}
+}
+@keyframes flip2{
+  0%,15%{transform:rotateY(0deg);}
+  40%,60%{transform:rotateY(-160deg);}
+  85%,100%{transform:rotateY(0deg);}
+}
+@keyframes flip3{
+  0%,15%{transform:rotateY(0deg);}
+  40%,60%{transform:rotateY(-160deg);}
+  85%,100%{transform:rotateY(0deg);}
+}
+@keyframes dot-bounce{
+  0%,80%,100%{transform:scale(.6);opacity:.4;}
+  40%{transform:scale(1.2);opacity:1;}
+}
+
+</style>
 </head>
 <body>
+
+<!-- Newspaper Loading Overlay -->
+<div class="news-loading-overlay" id="news-loading-overlay" style="display:none">
+  <div class="newspaper-scene">
+    <div class="newspaper-book">
+      <div class="np-left">
+        <div class="np-title">HR News</div>
+        <div class="np-line m"></div>
+        <div class="np-line s"></div>
+        <div class="np-img"></div>
+        <div class="np-line m"></div>
+        <div class="np-line"></div>
+        <div class="np-cols">
+          <div><div class="np-col-line" style="margin-bottom:3px"></div><div class="np-col-line s"></div><div class="np-col-line" style="margin-top:3px"></div></div>
+          <div><div class="np-col-line" style="margin-bottom:3px"></div><div class="np-col-line m"></div><div class="np-col-line s" style="margin-top:3px"></div></div>
+        </div>
+      </div>
+      <div class="np-spine"></div>
+      <div class="np-page p1">
+        <div style="padding:10px 8px;display:flex;flex-direction:column;gap:4px">
+          <div class="np-line m"></div><div class="np-line s"></div>
+          <div class="np-img"></div>
+          <div class="np-line"></div><div class="np-line m"></div>
+        </div>
+      </div>
+      <div class="np-page p2">
+        <div style="padding:10px 8px;display:flex;flex-direction:column;gap:4px">
+          <div class="np-line"></div><div class="np-line m"></div>
+          <div class="np-line s"></div><div class="np-line"></div>
+        </div>
+      </div>
+      <div class="np-page p3">
+        <div style="padding:10px 8px;display:flex;flex-direction:column;gap:4px">
+          <div class="np-line m"></div><div class="np-line s"></div>
+          <div class="np-line"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="np-loading-text">Agent Eddy가 뉴스를 수집하고 있습니다<br><span style="font-size:12px;color:#7A757F">노무·채용·교육·컨퍼런스 큐레이션 중 (30~60초)</span></div>
+  <div class="np-dots"><span></span><span></span><span></span></div>
+</div>
 
 <header class="topbar">
   <a class="topbar-brand" href="/dashboard.html">

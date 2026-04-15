@@ -161,6 +161,7 @@
   /* ── 메인 로드 ── */
   async function loadDigest() {
     statusEl.textContent = `Agent Eddy 작업 중… (${rangeStr} 일정 기준, 30~60초 소요)`;
+    const overlay=document.getElementById("news-loading-overlay"); if(overlay) overlay.style.display="flex";
     statusEl.className = "status-text";
     refreshBtn.disabled = true;
 
@@ -187,9 +188,11 @@
       const ts = data.generated_at
         ? new Date(data.generated_at).toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})
         : "";
+      const ov=document.getElementById("news-loading-overlay"); if(ov) ov.style.display="none";
       statusEl.textContent = `Agent Eddy 완료 · ${ts} · ${rangeStr} 기준`;
 
     } catch (e) {
+      const ov2=document.getElementById("news-loading-overlay"); if(ov2) ov2.style.display="none";
       statusEl.textContent = "Agent Eddy 연결 실패 — python server.py 실행 여부를 확인하세요.";
       statusEl.className = "status-text error";
       morningGrid.innerHTML = `<div class="empty" style="grid-column:1/-1">서버에 연결할 수 없습니다.</div>`;

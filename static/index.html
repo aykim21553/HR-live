@@ -155,6 +155,54 @@
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+
+/* ══ Sakura Cherry Blossom Loading ══ */
+.sakura-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(160deg,#fdf2f8 0%,#fce7f3 40%,#f3e8ff 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.sakura-petal{
+  position:absolute;top:-30px;
+  animation:sakura-fall linear infinite;
+  filter:drop-shadow(0 2px 4px rgba(219,39,119,0.2));
+  user-select:none;pointer-events:none;
+}
+@keyframes sakura-fall{
+  0%{transform:translateY(-30px) rotate(0deg) translateX(0);opacity:0;}
+  10%{opacity:1;}
+  85%{opacity:0.9;}
+  100%{transform:translateY(110vh) rotate(720deg) translateX(60px);opacity:0;}
+}
+.sakura-center{
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  background:rgba(255,255,255,0.75);backdrop-filter:blur(12px);
+  border-radius:24px;padding:36px 40px;
+  box-shadow:0 8px 32px rgba(219,39,119,0.12);
+  border:1.5px solid rgba(249,168,212,0.4);
+  z-index:1;
+}
+.sakura-icon{font-size:48px;animation:sakura-bloom 2s ease-in-out infinite alternate;}
+@keyframes sakura-bloom{
+  from{transform:scale(0.9) rotate(-5deg);}
+  to{transform:scale(1.1) rotate(5deg);}
+}
+.sakura-title{
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;
+  color:#9d174d;text-align:center;
+}
+.sakura-sub{font-size:12px;color:#be185d;text-align:center;opacity:.8;}
+.sakura-bar-wrap{width:220px;height:6px;background:rgba(249,168,212,0.3);border-radius:3px;overflow:hidden;}
+.sakura-bar{height:100%;background:linear-gradient(90deg,#f472b6,#ec4899,#db2777);border-radius:3px;animation:sakura-progress 4s ease-in-out infinite;}
+@keyframes sakura-progress{
+  0%{width:5%;}50%{width:75%;}100%{width:95%;}
+}
+.sakura-step{
+  font-size:11px;font-weight:700;color:#9d174d;
+  display:flex;align-items:center;gap:6px;
+}
+
 </style>
 </head>
 <body class="text-on-surface min-h-screen">
@@ -637,9 +685,11 @@
       const payload = await apiPost('/api/score-resumes', { jd_text: jd, resumes, top_k: 5 });
       renderResults(payload);
       setProgress(`완료. 총 ${payload.results.length}명 분석됨.`);
+      const skOv2=document.getElementById('sakura-overlay');if(skOv2)skOv2.style.display='none';
     } catch(e) {
       showError(e.message || '분석 요청 실패');
       setProgress('');
+      const skOv3=document.getElementById('sakura-overlay');if(skOv3)skOv3.style.display='none';
     }
     analyzeBtn.disabled = false;
     syncAnalyzeEnabled();

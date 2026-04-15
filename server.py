@@ -40,7 +40,7 @@ ROOT = Path(__file__).resolve().parent
 # ══════════════════════════════════════════════════════════════
 # 학자금 데이터 경로 & 규정 상수
 # ══════════════════════════════════════════════════════════════
-_TUITION_DATA  = ROOT / "data"
+_TUITION_DATA  = ROOT.parent / "claude" / "files" / "tuition_automation_source" / "tuition-automation" / "data"
 _DB_FILE       = _TUITION_DATA / "payment_history_full.json"   # 7년 이력 DB
 _APPS_FILE     = _TUITION_DATA / "applications.json"           # 신청 접수 store
 
@@ -285,6 +285,49 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ══════════════════════════════════════════════════════════════
+# 보안 미들웨어 — Rate Limiting
+# ══════════════════════════════════════════════════════════════
+from collections import defaultdict
+import time as _time
+
+_rate_store: dict = defaultdict(list)
+RATE_LIMIT_CALLS = 30   # 분당 최대 요청 수
+RATE_LIMIT_WINDOW = 60  # 초
+
+def _check_rate_limit(client_ip: str) -> bool:
+    """True = 허용, False = 차단"""
+    now = _time.time()
+    window_start = now - RATE_LIMIT_WINDOW
+    calls = [t for t in _rate_store[client_ip] if t > window_start]
+    if len(calls) >= RATE_LIMIT_CALLS:
+        return False
+    calls.append(now)
+    _rate_store[client_ip] = calls
+    return True
+
+from fastapi import Request as _Request
+
+@app.middleware("http")
+async def rate_limit_middleware(request: _Request, call_next):
+    client_ip = request.client.host if request.client else "unknown"
+    # API 엔드포인트에만 적용
+    if request.url.path.startswith("/api/"):
+        if not _check_rate_limit(client_ip):
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "요청 한도 초과. 1분 후 다시 시도하세요."}
+            )
+    response = await call_next(request)
+    # 보안 헤더 추가
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
+
 
 
 def get_client() -> _anthropic.Anthropic:
@@ -1237,39 +1280,39 @@ async def ocr_invoice(body: OcrBody):
     else:
         media_type = "image/jpeg"
 
-    prompt = """이 이미지는 한화투자증권 학자금 지원 신청을 위한 교육비 납입 서류입니다.
-문서 유형에 따라 다음과 같이 필드를 찾아 JSON 으로만 반환하세요 (다른 텍스트 없이).
-확인할 수 없는 필드는 null 로 표시하세요.
+    prompt = """이 이미지는 한국의 교육비 납입 서류(교육비납입확인서, 학자금납입확인서, 학자금납입증명서 등)입니다.
+한국어로 작성된 서류에서 아래 정보를 추출하여 JSON만 반환하세요. 다른 텍스트는 출력하지 마세요.
+확인 불가 필드는 null로 표시하세요.
 
-[문서 유형별 필드 위치 안내]
-- 교육비납입확인서(유치원): 원아명→child_name, 보호자명→guardian_name, 합계금액→amount_total, 납부일자→payment_date(가장 최근 날짜)
-- 학자금납입확인서(고등학교): 학생명→child_name, 보호자명→guardian_name, 학년/반→grade, 합계→amount_total
-- 학자금납입증명서(대학교): 성명→child_name, 학번→student_id, 학과→major, 등록금→amount_tuition, 합계→amount_total
-- 해외학교: school_country 에 국가코드(US/UK/SG/JP/AU 등) 입력, 기본값은 KR
+[서류 유형별 필드 위치]
+1. 교육비납입확인서(유치원/어린이집): 원아명→child_name, 보호자명→guardian_name, 합계금액→amount_total
+2. 학자금납입확인서(고등학교): 학생명→child_name, 보호자명→guardian_name, 합계→amount_total  
+3. 학자금납입증명서(대학교): 성명→child_name, 학번→student_id, 합계→amount_total
+4. 국제학교/해외: school_country에 ISO 국가코드(US/UK/SG 등)
 
 반환 JSON:
 {
-  "doc_type":      "교육비납입확인서 | 학자금납입확인서 | 학자금납입증명서",
-  "child_name":    "학생·원아·자녀 이름",
-  "guardian_name": "보호자·학부모 이름 (없으면 null)",
-  "student_id":    "학번 (대학교만, 없으면 null)",
-  "major":         "학과 (대학교만, 없으면 null)",
-  "grade":         "학년반 (고등학교/유치원, 없으면 null)",
-  "school_name":   "학교·유치원·기관 전체 이름",
-  "school_type":   "유치원 | 고등학교 | 대학교",
-  "school_country":"KR (해외는 US/UK/SG/JP/AU 등 ISO 2자리)",
-  "school_address":"학교 주소 (문서 하단에 있는 경우)",
-  "issuer_name":   "교장·원장·총장 이름 및 직함",
-  "issue_date":    "발급일 YYYY-MM-DD",
-  "payment_date":  "납부일 YYYY-MM-DD (여러 건이면 가장 최근)",
-  "benefit_year":  연도_정수,
-  "benefit_term":  "1분기~4분기 또는 1학기/2학기 (대상기간에서 유추)",
-  "amount_tuition": 수업료_또는_등록금_정수_원단위,
-  "amount_ops":    운영지원비_또는_특별활동비_정수 (없으면 0),
-  "amount_other":  기타항목합계_정수 (없으면 0),
-  "amount_total":  납부총액_정수_원단위,
-  "confidence":    0.0~1.0_신뢰도,
-  "notes":         "특이사항·확인필요사항 (인감·직인 확인여부 포함)"
+  "doc_type": "교육비납입확인서|학자금납입확인서|학자금납입증명서",
+  "child_name": "학생/원아 이름",
+  "guardian_name": "보호자/학부모 이름 또는 null",
+  "student_id": "학번(대학교만) 또는 null",
+  "major": "학과(대학교만) 또는 null",
+  "grade": "학년반(초중고/유치원) 또는 null",
+  "school_name": "학교/유치원/기관 전체 이름",
+  "school_type": "유치원|초등학교|중학교|고등학교|대학교",
+  "school_country": "KR(기본값, 해외면 US/UK/SG 등)",
+  "school_address": "주소(있는 경우)",
+  "issuer_name": "교장/원장/총장 이름과 직함",
+  "issue_date": "발급일 YYYY-MM-DD",
+  "payment_date": "납부일 YYYY-MM-DD(여러 건이면 가장 최근)",
+  "benefit_year": 연도정수,
+  "benefit_term": "1분기~4분기 또는 1학기/2학기",
+  "amount_tuition": 수업료/등록금_정수,
+  "amount_ops": 운영지원비/특별활동비_정수(없으면 0),
+  "amount_other": 기타항목합계_정수(없으면 0),
+  "amount_total": 납부총액_정수,
+  "confidence": 0.0~1.0,
+  "notes": "특이사항(직인확인여부, 복수월납부 등)"
 }"""
 
     try:
@@ -1325,18 +1368,18 @@ def _llm_generate_edu_conf(client: "_anthropic.Anthropic") -> dict:
     from datetime import timedelta
     today = datetime.now()
     today_str   = today.strftime("%Y년 %m월 %d일")
-    date_from   = today.strftime("%Y년 %m월 %d일")          # 오늘부터
-    date_to     = (today + timedelta(days=60)).strftime("%Y년 %m월 %d일")  # 2개월 후
+    date_from   = (today + timedelta(weeks=3)).strftime("%Y년 %m월 %d일")
+    date_to     = (today + timedelta(days=60)).strftime("%Y년 %m월 %d일")
 
     prompt = f"""당신은 한화투자증권 혁신지원실에서 인사팀 직원들의 역량개발을 지원하는 전문가입니다.
 현재 날짜: {today_str}
 
 ⚠️ 중요 제약: 교육과 컨퍼런스의 일정은 반드시 **{date_from} ~ {date_to}** 사이에 시작하는 것만 포함하세요.
-(오늘 ~ 2개월 후 범위. 이 기간 밖의 일정은 절대 포함하지 마세요.)
+(현재 날짜 기준 3주 후 ~ 2개월 후 범위. 이 기간 밖의 일정은 절대 포함하지 마세요.)
 
 아래 두 가지를 JSON 형식으로 작성해주세요. JSON 외 다른 텍스트 없이 출력하세요.
 
-1. **인재관리팀 팀원에게 추천하는 역량개발 교육** (6건)
+1. **인사팀 추천 역량개발 교육** (6건)
 반드시 아래 기관들을 우선 포함하여 다양하게 구성하세요:
 - 중앙경제교육원 (중앙일보 계열, 비즈니스·HR 교육)
 - 한국생산성본부 (KPC, 경영·HRD·디지털 역량)
@@ -1693,12 +1736,12 @@ def health():
 
 # ── 정적 파일 (마지막에 마운트) ───────────────────────────────
 # 학자금 튜이션 웹앱 서빙 (/tuition/ 접두사)
-_TUITION_WEBAPP = ROOT / "static" / "tuition"
+_TUITION_WEBAPP = ROOT.parent / "claude" / "files" / "tuition_automation_source" / "tuition-automation" / "webapp"
 if _TUITION_WEBAPP.exists():
     app.mount("/tuition", StaticFiles(directory=str(_TUITION_WEBAPP)), name="tuition")
 
 # cursor/ 정적 파일 (catch-all — 반드시 마지막)
-app.mount("/", StaticFiles(directory=str(ROOT / "static"), html=True), name="site")
+app.mount("/", StaticFiles(directory=str(ROOT), html=True), name="site")
 
 
 if __name__ == "__main__":
