@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Ellis in Wonderland · Feedback Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=snap" rel="stylesheet"/>
+<style>
+:root{
+  --org:#FF6900;--org-dk:#a14000;--org-pale:#fff8f4;
+  --ind:#4f46e5;--ind-pale:#f0f4ff;--ind-mid:#6366f1;
+  --low:#f3f4f5;--bd:rgba(25,28,29,0.08);
+  --tx:#1B1B1F;--mu:#49454E;--so:#7A757F;
+  --gn:#0d6b47;--gnb:rgba(13,107,71,0.09);
+  --am:#a16400;--amb:rgba(201,120,0,0.09);
+  --rd:#9b1b1b;--rdb:rgba(186,26,26,0.08);
+  --sh:0 8px 28px rgba(25,28,29,0.07);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;font-size:14px;color:var(--tx);background:var(--low);min-height:100vh;}
+h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;}
+
+/* ══ PASSWORD GATE ══ */
+#gate-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%);
+  display:flex;align-items:center;justify-content:center;
+}
+.gate-box{
+  background:#fff;border-radius:24px;padding:44px 48px;
+  box-shadow:0 30px 60px rgba(0,0,0,0.3);
+  text-align:center;max-width:420px;width:100%;
+}
+.gate-rabbit{font-size:52px;margin-bottom:16px;display:block;}
+.gate-title{font-family:'Dancing Script',cursive;font-size:2rem;color:var(--ind);font-weight:700;margin-bottom:4px;}
+.gate-sub{font-size:12px;color:var(--so);margin-bottom:24px;}
+.gate-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--so);text-align:left;margin-bottom:6px;display:block;}
+.gate-input{
+  width:100%;padding:13px 16px;border-radius:12px;
+  border:2px solid var(--bd);background:var(--low);
+  font-size:15px;font-weight:700;letter-spacing:.15em;
+  text-align:center;font-family:'Plus Jakarta Sans',sans-serif;
+  outline:none;color:var(--tx);transition:.15s;
+}
+.gate-input:focus{border-color:var(--ind);box-shadow:0 0 0 3px rgba(79,70,229,0.15);}
+.gate-btn{
+  width:100%;margin-top:14px;padding:13px;border-radius:99px;border:none;
+  background:linear-gradient(135deg,#312e81,var(--ind));
+  color:#fff;font-size:14px;font-weight:800;cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  box-shadow:0 6px 18px rgba(79,70,229,0.35);
+  transition:filter .15s;
+}
+.gate-btn:hover{filter:brightness(1.08);}
+.gate-error{color:var(--rd);font-size:12px;font-weight:700;margin-top:8px;min-height:1.4em;text-align:center;}
+.gate-hint{font-size:11px;color:var(--so);margin-top:16px;line-height:1.5;}
+
+/* ══ TOPBAR — matches dashboard ══ */
+.tb{
+  background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);
+  height:56px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;position:sticky;top:0;z-index:100;
+  box-shadow:0 1px 0 var(--bd);
+}
+.tb-brand{text-decoration:none;display:flex;align-items:center;gap:10px;}
+.tb-hr{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:800;color:var(--org);}
+.tb-sep{color:#d1d5db;font-size:13px;}
+.tb-page{font-family:'Dancing Script',cursive;font-size:1.25rem;color:var(--ind);font-weight:700;}
+.tb-r{display:flex;align-items:center;gap:8px;}
+.api-dot{width:8px;height:8px;border-radius:50%;background:#d1d5db;flex-shrink:0;}
+.api-dot.live{background:var(--gn);box-shadow:0 0 0 3px rgba(13,107,71,0.15);}
+.api-lbl{font-size:11px;font-weight:700;color:var(--so);display:flex;align-items:center;gap:5px;}
+.agent-pill{font-size:11px;font-weight:800;padding:3px 12px;border-radius:99px;background:var(--ind-pale);color:var(--ind);}
+.back-btn{font-size:12px;font-weight:600;color:var(--mu);text-decoration:none;padding:5px 12px;border-radius:20px;border:1.5px solid var(--bd);background:#fff;transition:.15s;}
+.back-btn:hover{background:var(--ind-pale);color:var(--ind);}
+
+/* ══ PAGE ══ */
+.wrap{max-width:980px;margin:0 auto;padding:28px 20px 60px;}
+
+/* ══ HERO — dashboard style, rabbit on left ══ */
+.hero{
+  background:#fff;border-radius:22px;
+  box-shadow:var(--sh);margin-bottom:22px;
+  display:grid;grid-template-columns:220px 1fr;overflow:hidden;
+  min-height:200px;
+}
+@media(max-width:680px){.hero{grid-template-columns:1fr;}}
+
+/* Left: rabbit pattern */
+.hero-left{
+  background:linear-gradient(160deg,#312e81 0%,#4f46e5 60%,#6366f1 100%);
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:28px 20px;
+}
+/* Subtle repeating rabbit silhouettes */
+.hero-left::before{
+  content:'';
+  position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='rgba(255,255,255,0.06)'%3E%3Cellipse cx='40' cy='55' rx='14' ry='16'/%3E%3Cellipse cx='34' cy='30' rx='7' ry='14'/%3E%3Cellipse cx='46' cy='30' rx='7' ry='14'/%3E%3Ccircle cx='37' cy='48' r='3'/%3E%3Ccircle cx='43' cy='48' r='3'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:80px 80px;
+}
+/* Large centered rabbit SVG */
+.hero-rabbit-icon{
+  position:relative;z-index:1;font-size:56px;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+.hero-left-title{
+  position:relative;z-index:1;
+  font-family:'Dancing Script',cursive;
+  font-size:1.4rem;font-weight:700;
+  color:rgba(255,255,255,0.9);
+  margin-top:8px;text-align:center;line-height:1.2;
+}
+.hero-left-sub{
+  position:relative;z-index:1;
+  font-size:10px;font-weight:700;
+  color:rgba(255,255,255,0.5);
+  text-transform:uppercase;letter-spacing:.1em;
+  margin-top:4px;text-align:center;
+}
+
+/* Right: content */
+.hero-right{padding:28px 32px;display:flex;flex-direction:column;justify-content:center;}
+.hero-eyebrow{
+  font-size:10px;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ind);margin-bottom:6px;
+  display:flex;align-items:center;gap:6px;
+}
+.hero-title{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(1.3rem,3vw,1.7rem);font-weight:800;
+  color:var(--tx);margin-bottom:4px;line-height:1.2;
+}
+.hero-title span{
+  font-family:'Dancing Script',cursive;
+  color:var(--ind);font-size:1.1em;
+}
+.hero-desc{font-size:13px;color:var(--so);line-height:1.65;margin-bottom:12px;}
+.anon-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--ind-pale);border-radius:99px;padding:5px 14px;
+  font-size:11px;font-weight:700;color:var(--ind);
+}
+.hero-quote{
+  margin-top:10px;font-size:11px;font-style:italic;
+  color:var(--so);line-height:1.5;
+  border-left:2px solid var(--ind-pale);padding-left:10px;
+}
+
+/* ══ CARDS — matches dashboard ══ */
+.card{background:#fff;border-radius:18px;padding:24px 28px;box-shadow:var(--sh);margin-bottom:14px;}
+.card-title{font-size:14px;font-weight:800;color:var(--tx);margin-bottom:4px;}
+.card-sub{font-size:12px;color:var(--so);margin-bottom:16px;}
+.sec-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--so);margin-bottom:8px;}
+.divd{height:1px;background:var(--bd);margin:14px 0;}
+
+/* File upload */
+.upload-zone{
+  border:2px dashed rgba(79,70,229,0.2);border-radius:14px;
+  padding:28px 20px;text-align:center;cursor:pointer;
+  transition:.2s;background:var(--ind-pale);
+}
+.upload-zone:hover,.uz-over{border-color:var(--ind);background:rgba(79,70,229,0.07);}
+.uz-icon{font-size:34px;margin-bottom:8px;}
+.uz-title{font-size:14px;font-weight:700;color:var(--ind);margin-bottom:4px;}
+.uz-sub{font-size:11px;color:var(--so);}
+.parse-status{padding:10px 14px;border-radius:10px;font-size:12px;font-weight:600;margin-top:10px;}
+.ps-loading{background:var(--ind-pale);color:var(--ind);}
+.ps-ok{background:var(--gnb);color:var(--gn);}
+.ps-err{background:var(--rdb);color:var(--rd);}
+.apply-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;margin-top:10px;padding:11px;border-radius:10px;
+  border:none;background:linear-gradient(135deg,#312e81,var(--ind));
+  color:#fff;font-size:13px;font-weight:800;cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  box-shadow:0 4px 12px rgba(79,70,229,0.22);transition:filter .15s;
+}
+.apply-btn:hover{filter:brightness(1.08);}
+
+/* Manager input */
+.mgr-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--ind-pale);border:1.5px solid rgba(79,70,229,0.12);
+  border-radius:12px;padding:12px 16px;margin-bottom:16px;
+}
+.mgr-row label{font-size:11px;font-weight:800;color:var(--ind);white-space:nowrap;}
+.mgr-row input{background:transparent;border:none;font-size:14px;font-weight:700;color:var(--tx);flex:1;outline:none;font-family:inherit;}
+
+/* Member cards */
+.member-list{display:flex;flex-direction:column;gap:10px;}
+.member-card{
+  background:var(--low);border:1.5px solid rgba(79,70,229,0.08);
+  border-radius:14px;padding:18px 20px;
+}
+.m-anon-label{
+  font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;
+  background:var(--ind-pale);color:var(--ind);display:inline-block;margin-bottom:8px;
+}
+.member-header{display:grid;grid-template-columns:1fr 110px auto;gap:10px;align-items:center;margin-bottom:12px;}
+.name-input{
+  background:#fff;border:none;border-radius:8px;padding:8px 12px;
+  font-size:13px;font-weight:700;font-family:inherit;color:var(--tx);outline:none;width:100%;
+}
+.name-input:focus{box-shadow:0 0 0 2px rgba(79,70,229,0.25);}
+.grade-sel{
+  background:#fff;border:none;border-radius:8px;padding:8px 10px;
+  font-size:13px;font-weight:700;font-family:inherit;color:var(--ind);outline:none;text-align:center;
+}
+.del-btn{
+  width:28px;height:28px;border-radius:50%;border:none;
+  background:rgba(186,26,26,0.1);color:var(--rd);cursor:pointer;
+  font-size:14px;display:flex;align-items:center;justify-content:center;
+}
+.del-btn:hover{background:var(--rdb);}
+.fb-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+@media(max-width:640px){.fb-grid{grid-template-columns:1fr;}}
+.fb-f label{
+  font-size:10px;font-weight:800;color:var(--ind);
+  display:flex;align-items:center;gap:4px;
+  margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;
+}
+.fb-ta{
+  width:100%;background:#fff;border:none;border-radius:10px;
+  padding:10px 12px;font-size:12px;font-family:'Malgun Gothic',sans-serif;
+  color:var(--tx);resize:vertical;min-height:88px;outline:none;line-height:1.6;
+}
+.fb-ta:focus{box-shadow:0 0 0 2px rgba(79,70,229,0.25);}
+.add-btn{
+  width:100%;padding:12px;border-radius:12px;border:2px dashed rgba(79,70,229,0.18);
+  background:transparent;color:var(--ind);font-size:13px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  gap:6px;transition:.15s;font-family:inherit;margin-top:8px;
+}
+.add-btn:hover{background:var(--ind-pale);}
+
+/* Analyze button */
+.analyze-btn{
+  width:100%;padding:15px;border-radius:99px;border:none;
+  background:linear-gradient(135deg,var(--org-dk),var(--org));
+  color:#fff;font-size:14px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 6px 18px rgba(255,105,0,0.28);transition:filter .15s;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+.analyze-btn:hover{filter:brightness(1.08);}
+.analyze-btn:disabled{opacity:.4;cursor:not-allowed;filter:none;}
+.prog-msg{text-align:center;font-size:12px;color:var(--ind);margin-top:10px;min-height:1.4em;font-weight:600;}
+
+/* ── Results ── */
+.sum-banner{border-radius:16px;padding:22px 26px;display:flex;align-items:flex-start;gap:18px;margin-bottom:14px;}
+.sum-score{font-size:50px;font-weight:800;line-height:1;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0;}
+.sum-grade-pill{font-size:11px;font-weight:800;padding:3px 12px;border-radius:99px;display:inline-block;margin-bottom:6px;}
+.sum-headline{font-size:15px;font-weight:800;margin-bottom:4px;}
+.sum-mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.mini-box{background:rgba(255,255,255,0.55);border-radius:8px;padding:8px 10px;font-size:11px;line-height:1.5;}
+.mini-box b{display:block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:rgba(0,0,0,0.4);margin-bottom:2px;}
+.s-ex{background:var(--gnb);border:1.5px solid rgba(13,107,71,0.18);}
+.s-gd{background:rgba(79,70,229,0.08);border:1.5px solid rgba(79,70,229,0.15);}
+.s-nm{background:var(--amb);border:1.5px solid rgba(201,120,0,0.18);}
+.s-pr{background:var(--rdb);border:1.5px solid rgba(186,26,26,0.18);}
+
+/* Dimension cards */
+.dim-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+@media(max-width:600px){.dim-grid{grid-template-columns:1fr;}}
+.dim-card{background:#fff;border-radius:14px;padding:16px 18px;box-shadow:var(--sh);border-left:4px solid transparent;}
+.dim-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.dim-label{font-size:13px;font-weight:800;display:flex;align-items:center;gap:6px;}
+.dim-score{font-size:20px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;}
+.bar-wrap{height:5px;background:#e5e7eb;border-radius:3px;overflow:hidden;margin-bottom:10px;}
+.bar-fill{height:100%;border-radius:3px;transition:width .8s ease;}
+.dim-finding{font-size:11px;color:var(--mu);line-height:1.55;margin-bottom:8px;}
+.tag{display:inline-flex;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;margin:2px;}
+.tag-r{background:var(--rdb);color:var(--rd);}
+.tag-g{background:var(--gnb);color:var(--gn);}
+.tag-a{background:var(--amb);color:var(--am);}
+
+/* Member result */
+.mr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+@media(max-width:600px){.mr-grid{grid-template-columns:1fr;}}
+.mr-card{background:#fff;border-radius:14px;padding:16px;box-shadow:var(--sh);}
+.mr-name{font-size:12px;font-weight:800;color:var(--ind);margin-bottom:2px;}
+.mr-real{font-size:10px;color:var(--so);margin-bottom:6px;}
+.mr-grade-badge{font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px;display:inline-block;margin-bottom:8px;}
+.mr-scores{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;}
+.mr-sc-item{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--ind-pale);color:var(--ind);}
+.mr-flag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--rdb);color:var(--rd);margin:2px;display:inline-block;}
+.mr-txt{font-size:11px;color:var(--mu);line-height:1.5;margin-top:5px;}
+
+/* Action items */
+.act-list{display:flex;flex-direction:column;gap:8px;}
+.act-item{display:flex;gap:10px;padding:12px 14px;border-radius:10px;align-items:flex-start;}
+.act-high{background:var(--rdb);}
+.act-mid{background:var(--amb);}
+.act-ic{font-size:18px;flex-shrink:0;}
+.act-pri{font-size:10px;font-weight:800;margin-bottom:2px;}
+.act-txt{font-size:12px;color:var(--mu);line-height:1.5;}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:9px 20px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:'Plus Jakarta Sans',sans-serif;transition:.15s;text-decoration:none;}
+.btn-g{background:#fff;color:var(--mu);border:1.5px solid var(--bd);}
+.btn-g:hover{background:var(--low);}
+.btn-ind{background:linear-gradient(135deg,#312e81,var(--ind));color:#fff;box-shadow:0 4px 12px rgba(79,70,229,0.22);}
+.btn-ind:hover{filter:brightness(1.08);}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════ PASSWORD GATE ════════════════════════ -->
+<div id="gate-overlay">
+  <div class="gate-box">
+    <span class="gate-rabbit">🐇</span>
+    <div class="gate-title">Ellis in Wonderland</div>
+    <div class="gate-sub">Feedback Analysis · 제한된 접근 공간입니다</div>
+    <label class="gate-label" for="gate-input">접속 코드 입력 (12자리)</label>
+    <input class="gate-input" id="gate-input" type="password" maxlength="12"
+           placeholder="••••••••••••" autocomplete="off"
+           onkeydown="if(event.key==='Enter')checkGate()">
+    <button class="gate-btn" onclick="checkGate()">입장하기 →</button>
+    <div class="gate-error" id="gate-error"></div>
+    <div class="gate-hint">이 공간은 승인된 HR 담당자만 입장할 수 있습니다.<br>접속 코드는 김지윤 차장님께 문의하세요.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════ MAIN CONTENT ════════════════════════ -->
+<div id="main-content" style="display:none">
+
+<header class="tb">
+  <a class="tb-brand" href="/dashboard.html">
+    <span class="tb-hr">HR Room</span>
+    <span class="tb-sep">|</span>
+    <span class="tb-page">Feedback</span>
+  </a>
+  <div class="tb-r">
+    <span class="api-lbl"><span class="api-dot" id="api-dot"></span><span id="api-lbl">확인 중</span></span>
+    <span class="agent-pill">✦ Agent Ellis</span>
+    <a href="/dashboard.html" class="back-btn">← 대시보드</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- Hero -->
+  <div class="hero">
+    <!-- Left: Rabbit pattern -->
+    <div class="hero-left">
+      <div class="hero-rabbit-icon">🐇</div>
+      <div class="hero-left-title">Ellis in<br>Wonderland</div>
+      <div class="hero-left-sub">Feedback Analysis</div>
+    </div>
+    <!-- Right: Description -->
+    <div class="hero-right">
+      <div class="hero-eyebrow">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--ind);display:inline-block"></span>
+        Feedback Analysis · Agent Ellis
+      </div>
+      <div class="hero-title" style="font-family:'Plus Jakarta Sans',sans-serif">피드백 분석</div>
+      <div class="hero-desc">
+        팀원에게 작성한 피드백을 <strong style="color:var(--ind)">5개 축(객관성·공정성·균형성·일관성·문화 적합성)</strong>으로 분석합니다.<br>
+        본업·혁신·성장 영역별 피드백 패턴을 지표화하여 건강한 피드백 문화를 지원합니다.
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="anon-badge">🔒 분석 시 팀원 이름 자동 익명화</span>
+      </div>
+      <div class="hero-quote">"Curiouser and curiouser — 피드백도 깊이 들여다볼수록 더 많은 것이 보입니다."</div>
+    </div>
+  </div>
+
+  <!-- 파일 업로드 -->
+  <div class="card">
+    <div class="card-title">📂 파일 업로드 (자동 파싱)</div>
+    <div class="card-sub">Excel · Word · PDF를 업로드하면 Agent Ellis가 피드백 데이터를 자동으로 읽어 아래 폼에 채웁니다.</div>
+    <div class="upload-zone" id="upload-zone"
+         onclick="document.getElementById('file-input').click()"
+         ondragover="event.preventDefault();this.classList.add('uz-over')"
+         ondragleave="this.classList.remove('uz-over')"
+         ondrop="onFileDrop(event)">
+      <div class="uz-icon">📄</div>
+      <div class="uz-title" id="uz-title">파일을 드래그하거나 클릭하여 선택</div>
+      <div class="uz-sub">.xlsx · .xls · .docx · .pdf · .txt · .csv</div>
+      <input type="file" id="file-input" accept=".xlsx,.xls,.xlsm,.docx,.pdf,.txt,.csv"
+             style="display:none" onchange="onFileSelect(event)">
+    </div>
+    <div id="parse-status" class="parse-status" style="display:none"></div>
+    <div id="parse-preview" style="display:none;margin-top:12px">
+      <div class="sec-lbl" style="margin-bottom:6px">파싱된 피드백 미리보기</div>
+      <div id="parse-preview-content" style="background:var(--ind-pale);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--mu);max-height:160px;overflow-y:auto;line-height:1.7"></div>
+      <button class="apply-btn" onclick="applyParsed()">✅ 분석 폼에 적용</button>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--so);display:flex;align-items:center;gap:5px">
+      💡 Excel은 이름·등급·본업·혁신·성장 컬럼이 있으면 자동 인식됩니다. Word/PDF는 Agent Ellis가 구조를 파악합니다.
+    </div>
+  </div>
+
+  <!-- 입력 폼 -->
+  <div class="card" id="input-card">
+    <div class="card-title">✏️ 피드백 데이터 직접 입력</div>
+    <div class="card-sub">팀원 피드백을 입력하세요. 실명은 UI에서만 표시되며 분석 시 자동 익명화됩니다.</div>
+    <div class="sec-lbl">팀원 피드백</div>
+    <div class="member-list" id="member-list"></div>
+    <button class="add-btn" onclick="addMember()">
+      <span class="material-symbols-outlined" style="font-size:18px">person_add</span>팀원 추가
+    </button>
+  </div>
+
+  <!-- 분석 실행 -->
+  <div style="margin-bottom:20px">
+    <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">
+      <span class="material-symbols-outlined" style="font-size:20px">psychology</span>
+      Agent Ellis 피드백 분석 실행
+    </button>
+    <div class="prog-msg" id="prog-msg"></div>
+  </div>
+
+  <!-- 결과 -->
+  <div id="result-section" style="display:none">
+    <div id="summary-banner"></div>
+    <div class="card">
+      <div class="card-title">5개 축 분석 결과</div>
+      <div class="dim-grid" id="dim-grid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">팀원별 분석 (익명화됨)</div>
+      <div class="mr-grid" id="mr-grid"></div>
+    </div>
+    <div class="card" id="act-card" style="display:none">
+      <div class="card-title">개선 권고사항</div>
+      <div class="act-list" id="act-list"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn btn-g" onclick="resetAll()">새로 분석</button>
+      <button class="btn btn-ind" id="word-btn" onclick="downloadWord()">📄 Word 리포트 다운로드</button>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+</div><!-- /main-content -->
+
+<script>
+/* ── Password: 변경 시 아래 값만 수정 ─────────────────────── */
+const ACCESS_CODE = 'Ellis26Wond1';   // 12자리 영문+숫자
+/* ─────────────────────────────────────────────────────────── */
+
+const ELLIS_API = 'http://127.0.0.1:8765/api/ellis/analyze';
+const DOCX_API  = 'http://127.0.0.1:8765/api/ellis/generate-docx';
+const PARSE_API = 'http://127.0.0.1:8765/api/ellis/parse-file';
+let memberCount = 0, analysisData = null, memberNames = {}, parsedMembers = [];
+
+/* ── Gate ── */
+(function initGate(){
+  if(sessionStorage.getItem('ellis_auth')==='ok'){
+    document.getElementById('gate-overlay').style.display='none';
+    document.getElementById('main-content').style.display='';
+    checkApi(); addMember(); addMember(); addMember();
+  }
+})();
+
+function checkGate(){
+  const val = document.getElementById('gate-input').value.trim();
+  if(val === ACCESS_CODE){
+    sessionStorage.setItem('ellis_auth','ok');
+    document.getElementById('gate-overlay').style.display='none';
+    document.getElementById('main-content').style.display='';
+    checkApi(); addMember(); addMember(); addMember();
+  } else {
+    const err = document.getElementById('gate-error');
+    err.textContent = '코드가 올바르지 않습니다. 다시 확인해주세요.';
+    document.getElementById('gate-input').value='';
+    document.getElementById('gate-input').focus();
+    setTimeout(()=>{err.textContent='';},3000);
+  }
+}
+
+/* ── API check ── */
+async function checkApi(){
+  try{
+    const r=await fetch('http://127.0.0.1:8765/api/health',{signal:AbortSignal.timeout(2500)});
+    if((await r.json()).ok){
+      document.getElementById('api-dot').className='api-dot live';
+      document.getElementById('api-lbl').textContent='Ellis API 연결됨';
+    }else document.getElementById('api-lbl').textContent='API 키 미설정';
+  }catch{document.getElementById('api-lbl').textContent='서버 오프라인';}
+}
+
+/* ── Member form ── */
+function addMember(){
+  memberCount++;
+  const id=memberCount, code=String.fromCharCode(64+id);
+  const div=document.createElement('div');
+  div.className='member-card';div.id=`mc-${id}`;
+  div.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span class="m-anon-label">팀원 ${code} (익명)</span>
+      <button class="del-btn" onclick="document.getElementById('mc-${id}').remove()">✕</button>
+    </div>
+    <div style="margin-bottom:10px">
+      <input type="text" class="name-input" id="mn-${id}" placeholder="이름 (내부용, 분석 시 익명화)" oninput="memberNames[${id}]=this.value" style="width:100%">
+    </div>
+    <div class="fb-grid">
+      <div class="fb-f"><label>💼 본업</label><textarea class="fb-ta" id="mj-${id}" placeholder="담당 업무 성과·행동에 대한 피드백"></textarea></div>
+      <div class="fb-f"><label>💡 혁신</label><textarea class="fb-ta" id="mi-${id}" placeholder="새로운 시도·아이디어·변화 기여 피드백"></textarea></div>
+      <div class="fb-f"><label>🌱 성장</label><textarea class="fb-ta" id="mg2-${id}" placeholder="역량 개발·학습·성장 방향 피드백"></textarea></div>
+    </div>`;
+  document.getElementById('member-list').appendChild(div);
+}
+
+/* ── File upload ── */
+function onFileDrop(e){
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('uz-over');
+  const f=e.dataTransfer.files[0]; if(f) handleUploadFile(f);
+}
+function onFileSelect(e){const f=e.target.files[0];if(f)handleUploadFile(f);}
+
+async function handleUploadFile(file){
+  const status=document.getElementById('parse-status');
+  const preview=document.getElementById('parse-preview');
+  document.getElementById('uz-title').textContent=`📎 ${file.name}`;
+  status.style.display='';status.className='parse-status ps-loading';
+  status.textContent=`🐇 Agent Ellis가 ${file.name}을 읽고 있습니다…`;
+  preview.style.display='none';parsedMembers=[];
+  const form=new FormData();form.append('file',file);
+  try{
+    const res=await fetch(PARSE_API,{method:'POST',body:form});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.detail||`HTTP ${res.status}`);
+    parsedMembers=data.members||[];
+    if(!parsedMembers.length){status.className='parse-status ps-err';status.textContent='팀원 피드백을 찾을 수 없습니다. 파일 구조를 확인하세요.';return;}
+    status.className='parse-status ps-ok';
+    status.textContent=`✅ ${data.file_type} 파일에서 팀원 ${parsedMembers.length}명 데이터 추출 완료`;
+    document.getElementById('parse-preview-content').innerHTML=parsedMembers.map((m,i)=>`
+      <div style="margin-bottom:8px;padding:8px 10px;background:#fff;border-radius:8px">
+        <strong style="color:var(--ind)">팀원${String.fromCharCode(65+i)} (${esc(m.name||'—')})</strong>
+        <span style="font-size:10px;background:rgba(79,70,229,0.1);color:var(--ind);padding:1px 7px;border-radius:99px;margin-left:6px">${esc(m.grade||'등급미상')}</span>
+        ${m.job?`<div style="margin-top:3px;font-size:11px"><b>본업:</b> ${esc(m.job.slice(0,60))}${m.job.length>60?'…':''}</div>`:''}
+        ${m.innovation?`<div style="font-size:11px"><b>혁신:</b> ${esc(m.innovation.slice(0,60))}${m.innovation.length>60?'…':''}</div>`:''}
+        ${m.growth?`<div style="font-size:11px"><b>성장:</b> ${esc(m.growth.slice(0,60))}${m.growth.length>60?'…':''}</div>`:''}
+      </div>`).join('');
+    preview.style.display='';
+  }catch(e){status.className='parse-status ps-err';status.textContent='파싱 실패: '+(e.message||'서버 오류');}
+}
+
+function applyParsed(){
+  if(!parsedMembers.length)return;
+  document.getElementById('member-list').innerHTML='';memberCount=0;
+  parsedMembers.forEach((m,idx)=>{
+    memberCount++;const id=memberCount,code=String.fromCharCode(64+id);
+    const div=document.createElement('div');div.className='member-card';div.id=`mc-${id}`;
+    div.innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span class="m-anon-label">팀원 ${code} (익명)</span>
+        <button class="del-btn" onclick="document.getElementById('mc-${id}').remove()">✕</button>
+      </div>
+      <div style="margin-bottom:10px">
+        <input type="text" class="name-input" id="mn-${id}" value="${esc(m.name||'')}" placeholder="이름 (내부용)" oninput="memberNames[${id}]=this.value" style="width:100%">
+      </div>
+      <div class="fb-grid">
+        <div class="fb-f"><label>💼 본업</label><textarea class="fb-ta" id="mj-${id}">${esc(m.job||'')}</textarea></div>
+        <div class="fb-f"><label>💡 혁신</label><textarea class="fb-ta" id="mi-${id}">${esc(m.innovation||'')}</textarea></div>
+        <div class="fb-f"><label>🌱 성장</label><textarea class="fb-ta" id="mg2-${id}">${esc(m.growth||'')}</textarea></div>
+      </div>`;
+    document.getElementById('member-list').appendChild(div);
+    memberNames[id]=m.name||'';
+  });
+  document.getElementById('input-card')?.scrollIntoView({behavior:'smooth'});
+  document.getElementById('parse-status').className='parse-status ps-ok';
+  document.getElementById('parse-status').textContent=`✅ ${parsedMembers.length}명 데이터가 폼에 적용되었습니다.`;
+}
+
+/* ── Analysis ── */
+function anonymize(members){return members.map((m,i)=>({...m,name:`팀원${String.fromCharCode(65+i)}`}));}
+
+async function runAnalysis(){
+  const mgr='팀장';  // 팀장명 입력 제거 — 고정값 사용
+  const cards=document.querySelectorAll('#member-list .member-card');
+  const members=[];
+  cards.forEach(c=>{
+    const id=c.id.replace('mc-','');
+    const name=document.getElementById(`mn-${id}`)?.value.trim()||'';
+    const job=document.getElementById(`mj-${id}`)?.value.trim()||'';
+    const innov=document.getElementById(`mi-${id}`)?.value.trim()||'';
+    const growth=document.getElementById(`mg2-${id}`)?.value.trim()||'';
+    if(name||job||innov||growth) members.push({name,grade:'',job,innovation:innov,growth});
+  });
+  if(!members.length){alert('팀원 피드백을 최소 1건 이상 입력하세요.');return;}
+  const btn=document.getElementById('analyze-btn');
+  const prog=document.getElementById('prog-msg');
+  btn.disabled=true;prog.textContent='🐇 Agent Ellis가 피드백 패턴을 분석 중입니다… (30~60초 소요)';
+  document.getElementById('result-section').style.display='none';
+  const anonMembers=anonymize(members);
+  const nameMap={};members.forEach((m,i)=>{nameMap[`팀원${String.fromCharCode(65+i)}`]=m.name||`팀원${String.fromCharCode(65+i)}`;});
+  try{
+    const res=await fetch(ELLIS_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({manager_name:mgr,members:anonMembers})});
+    if(!res.ok)throw new Error(await res.text());
+    const data=await res.json();
+    analysisData=data;renderResults(data,mgr,nameMap);prog.textContent='✅ 분석 완료';
+  }catch(e){prog.textContent='분석 실패: '+(e.message||'서버 오류');}
+  btn.disabled=false;
+}
+
+/* ── Render ── */
+const DIM_META={
+  objectivity:{ko:'객관성',icon:'📊',color:'#4f46e5',border:'#818cf8'},
+  fairness:   {ko:'공정성',icon:'⚖️',color:'#db2777',border:'#f9a8d4'},
+  balance:    {ko:'균형성',icon:'🔄',color:'#059669',border:'#6ee7b7'},
+  consistency:{ko:'일관성',icon:'📋',color:'#d97706',border:'#fde68a'},
+  culture_fit:{ko:'문화 적합성',icon:'🌱',color:'#7c3aed',border:'#c4b5fd'},
+};
+
+function renderResults(data,mgr,nameMap){
+  const a=data.analysis||{},sum=a.summary||{},dims=a.dimensions||{},mems=a.member_analysis||[],acts=a.action_items||[];
+  const sc=sum.overall_score||0;
+  const[cls,scCol,gCls]=sc>=80?['s-ex','var(--gn)','background:var(--gnb);color:var(--gn)']:sc>=65?['s-gd','var(--ind)','background:var(--ind-pale);color:var(--ind)']:sc>=50?['s-nm','var(--am)','background:var(--amb);color:var(--am)']:['s-pr','var(--rd)','background:var(--rdb);color:var(--rd)'];
+  document.getElementById('summary-banner').innerHTML=`
+    <div class="card sum-banner ${cls}" style="margin-bottom:14px">
+      <div class="sum-score" style="color:${scCol}">${sc}</div>
+      <div style="flex:1">
+        ${sum.grade?`<span class="sum-grade-pill" style="${gCls}">${sum.grade}</span>`:''}
+        <div class="sum-headline">Feedback Analysis</div>
+        <div style="font-size:12px;color:var(--mu);margin-top:2px">${esc(sum.headline||'')}</div>
+        <div class="sum-mini">
+          ${sum.top_strength?`<div class="mini-box"><b>✅ 잘된 점</b>${esc(sum.top_strength)}</div>`:''}
+          ${sum.top_risk?`<div class="mini-box"><b>⚠️ 주의 점</b>${esc(sum.top_risk)}</div>`:''}
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('dim-grid').innerHTML=Object.entries(DIM_META).map(([k,m])=>{
+    const d=dims[k]||{};const sc2=d.score||0;
+    const risks=(d.risk_expressions||d.high_risk_expressions||[]).slice(0,3).map(t=>`<span class="tag tag-r">${esc(t)}</span>`).join('');
+    const goods=(d.good_examples||d.coaching_suggestions||[]).slice(0,2).map(t=>`<span class="tag tag-g">${esc(t)}</span>`).join('');
+    return `<div class="dim-card" style="border-left-color:${m.border}">
+      <div class="dim-head">
+        <span class="dim-label"><span>${m.icon}</span>${m.ko}</span>
+        <span class="dim-score" style="color:${m.color}">${sc2}</span>
+      </div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${sc2}%;background:${m.color}"></div></div>
+      <div class="dim-finding">${esc(d.finding||'')}</div>
+      ${risks}${goods}
+      ${d.outlier_members?.length?`<div style="font-size:11px;color:var(--am);margin-top:4px">재검토: ${d.outlier_members.join(', ')}</div>`:''}
+      ${d.copy_paste_risk?`<span class="tag tag-a">복붙 의심</span>`:''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('mr-grid').innerHTML=mems.map(m=>{
+    const anonN=m.name||'팀원',realN=nameMap[anonN]||'';
+    const sc2=m.scores||{};
+    const flags=(m.flags||[]).map(f=>`<span class="mr-flag">${esc(f)}</span>`).join('');
+    const scores=Object.entries(sc2).map(([k,v])=>`<span class="mr-sc-item">${k} ${v}</span>`).join('');
+    const gc={S:'background:var(--gnb);color:var(--gn)',A:'background:var(--ind-pale);color:var(--ind)',B:'background:var(--amb);color:var(--am)',C:'background:var(--rdb);color:var(--rd)'}[m.grade]||'';
+    return `<div class="mr-card">
+      <div class="mr-name">${esc(anonN)}</div>
+      ${realN?`<div class="mr-real">내부 참조: ${esc(realN)}</div>`:''}
+      ${m.grade?`<span class="mr-grade-badge" style="${gc}">등급 ${m.grade}</span>`:''}
+      <div class="mr-scores">${scores}</div>
+      ${flags?`<div>${flags}</div>`:''}
+      ${m.strength?`<div class="mr-txt"><b style="color:var(--gn)">✅</b> ${esc(m.strength)}</div>`:''}
+      ${m.improvement?`<div class="mr-txt"><b style="color:var(--am)">💡</b> ${esc(m.improvement)}</div>`:''}
+    </div>`;
+  }).join('');
+
+  if(acts.length){
+    document.getElementById('act-card').style.display='';
+    document.getElementById('act-list').innerHTML=acts.map(ac=>`
+      <div class="act-item ${ac.priority==='높음'?'act-high':'act-mid'}">
+        <span class="act-ic">${ac.priority==='높음'?'🔴':'🟡'}</span>
+        <div><div class="act-pri" style="color:${ac.priority==='높음'?'var(--rd)':'var(--am)'}">${ac.priority}</div>
+        <div class="act-txt">${esc(ac.item||'')}</div></div>
+      </div>`).join('');
+  }
+  document.getElementById('result-section').style.display='';
+  document.getElementById('result-section').scrollIntoView({behavior:'smooth'});
+}
+
+/* ── Word download ── */
+async function downloadWord(){
+  if(!analysisData){alert('먼저 분석을 실행하세요.');return;}
+  const btn=document.getElementById('word-btn');
+  btn.disabled=true;btn.textContent='생성 중…';
+  try{
+    const mgr='팀장';
+    const res=await fetch(DOCX_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({manager_name:mgr,analysis:analysisData.analysis||{}})});
+    if(!res.ok)throw new Error(await res.text());
+    const blob=await res.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=`Ellis_${mgr}_${new Date().toISOString().slice(0,10)}.docx`;a.click();URL.revokeObjectURL(url);
+  }catch(e){alert('Word 생성 실패: '+(e.message||'서버 오류'));}
+  btn.disabled=false;btn.textContent='📄 Word 리포트 다운로드';
+}
+
+/* ── Reset ── */
+function resetAll(){
+  document.getElementById('member-list').innerHTML='';
+  memberCount=0;analysisData=null;memberNames={};parsedMembers=[];
+  document.getElementById('result-section').style.display='none';
+  document.getElementById('prog-msg').textContent='';
+  document.getElementById('act-card').style.display='none';
+  addMember();addMember();addMember();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

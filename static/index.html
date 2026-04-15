@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HR Room · 이력서 요약 및 직무 적합성 분석</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      if (window.pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="topbar__brand">
+          <span class="topbar__hr">HR Room</span>
+          <span class="topbar__powered">powered by Innovation Support Office</span>
+        </div>
+        <div class="topbar__actions">
+          <button type="button" class="icon-btn" aria-label="알림">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </button>
+          <button type="button" class="icon-btn" aria-label="내 프로필">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <section class="hero-banner" aria-label="소개">
+        <div class="hero-banner__inner">
+          <div class="hero-banner__card">
+            <p class="hero-banner__script">Idea Worth Spreading</p>
+            <p class="hero-banner__sub">Agentic AI Orchestrator 를 추구합니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <main class="dashboard">
+        <h2 class="dashboard__heading">서비스 허브</h2>
+        <div class="service-grid">
+          <a href="/hr-newsroom.html" class="service-card service-card--link">
+            <div class="service-card__head">
+              <span class="service-card__icon service-card__icon--violet" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </span>
+              <span class="service-card__cat">인사 · 조직</span>
+            </div>
+            <h3 class="service-card__title">해외 주재원 파견 Expats</h3>
+            <p class="service-card__desc">
+              해외 주재원 인사 이력·계약·복지를 한 화면에서 관리합니다.
+            </p>
+            <div class="service-card__foot">
+              <span class="service-card__status">현재 파견 4명 · 갱신 알림 1건</span>
+              <span class="service-card__arrow" aria-hidden="true">→</span>
+            </div>
+          </article>
+
+          <article class="service-card service-card--static">
+            <div class="service-card__head">
+              <span class="service-card__icon service-card__icon--mint" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </span>
+              <span class="service-card__cat">복지</span>
+            </div>
+            <h3 class="service-card__title">맞춤 복지 큐레이션</h3>
+            <p class="service-card__desc">
+              직원 라이프스테이지에 맞춘 복지·연금 상품을 안내합니다.
+            </p>
+            <div class="service-card__foot">
+              <span class="service-card__status">이번 달 추천 플랜 3건</span>
+              <span class="service-card__arrow" aria-hidden="true">→</span>
+            </div>
+          </article>
+
+          <a href="#resume-tool" class="service-card service-card--link">
+            <div class="service-card__head">
+              <span class="service-card__icon service-card__icon--orange" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+              </span>
+              <span class="service-card__cat">채용</span>
+            </div>
+            <h3 class="service-card__title">이력서 요약 및 직무 적합성 분석</h3>
+            <p class="service-card__desc">
+              방대한 이력서에서 핵심 역량을 요약하고, 게시된 직무와의 기술·문화 적합도를 다각도로 평가합니다. JD·RAG·LLM
+              파이프라인을 사용합니다.
+            </p>
+            <div class="service-card__foot">
+              <span id="resume-card-status" class="service-card__status">분석 워크스페이스로 이동</span>
+              <span class="service-card__arrow" aria-hidden="true">→</span>
+            </div>
+          </a>
+
+          <article class="service-card service-card--static">
+            <div class="service-card__head">
+              <span class="service-card__icon service-card__icon--amber" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </span>
+              <span class="service-card__cat">금융상품</span>
+            </div>
+            <h3 class="service-card__title">사내 금융상품 안내 허브</h3>
+            <p class="service-card__desc">
+              사내 우대 금융·퇴직 설계 상품을 비교합니다.
+            </p>
+            <div class="service-card__foot">
+              <span class="service-card__status">HR 뉴스룸 열기</span>
+              <span class="service-card__arrow" aria-hidden="true">→</span>
+            </div>
+          </a>
+        </div>
+
+        <section id="resume-tool" class="tool-section" tabindex="-1">
+          <div class="tool-section__bar">
+            <div>
+              <p class="tool-section__eyebrow">채용 · Agentic AI</p>
+              <h2 class="tool-section__title">이력서 요약 · 직무 적합성 분석</h2>
+            </div>
+            <p id="api-status" class="api-status" role="status">API 연결 확인 중…</p>
+          </div>
+
+          <div class="panel">
+            <section class="card" aria-labelledby="jd-heading">
+              <h2 id="jd-heading" class="card__title">1. 직무 레퍼런스 (JD / 공고 본문)</h2>
+              <p class="card__hint">
+                내부 JD를 붙여 넣거나 URL을 불러와 본문을 합칩니다. 최소 약 120자 이상이어야 분석이 가능합니다.
+              </p>
+              <label class="sr-only" for="jd-text">JD 본문</label>
+              <textarea
+                id="jd-text"
+                class="input input--area"
+                rows="10"
+                spellcheck="false"
+                placeholder="담당 업무, 자격 요건, 우대 사항, 조직 소개 등 직무기술서 또는 공고 전문을 붙여 넣습니다."
+              ></textarea>
+              <p id="jd-status" class="status" role="status"></p>
+
+              <div class="url-row">
+                <label class="sr-only" for="ref-url">레퍼런스 URL</label>
+                <input
+                  id="ref-url"
+                  class="input input--inline"
+                  type="url"
+                  placeholder="https://… (직무 소개·채용 공고 페이지)"
+                />
+                <button type="button" id="fetch-url" class="btn btn--secondary">URL 불러오기</button>
+              </div>
+              <p class="card__hint card__hint--tight">일부 사이트는 본문 추출이 제한될 수 있습니다. 그 경우 본문을 복사해 JD 칸에 붙여 주세요.</p>
+            </section>
+
+            <section class="card" aria-labelledby="files-heading">
+              <h2 id="files-heading" class="card__title">2. 이력서 폴더 / 파일</h2>
+              <p class="card__hint">PDF, DOCX, TXT, MD</p>
+              <div class="file-row">
+                <input type="file" id="folder" class="file-input" webkitdirectory multiple accept=".pdf,.docx,.txt,.md,text/plain" />
+                <label for="folder" class="btn btn--secondary">폴더 선택</label>
+                <input type="file" id="files" class="file-input" multiple accept=".pdf,.docx,.txt,.md,text/plain" />
+                <label for="files" class="btn btn--ghost">파일만 선택</label>
+              </div>
+              <p id="file-summary" class="status" role="status"></p>
+            </section>
+
+            <div class="actions">
+              <button type="button" id="analyze" class="btn btn--primary" disabled>RAG + LLM 분석 실행</button>
+              <button type="button" id="reset" class="btn btn--ghost">초기화</button>
+            </div>
+
+            <p id="progress" class="progress" aria-live="polite"></p>
+            <p id="error" class="error" role="alert" hidden></p>
+          </div>
+        </section>
+
+        <section id="results" class="results" hidden aria-live="polite">
+          <div class="results__head">
+            <h2 class="results__title">적합도 리스트 (LLM 판정)</h2>
+            <p id="results-meta" class="results__meta"></p>
+          </div>
+          <ol id="result-list" class="result-list"></ol>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <p class="site-footer__legal">© 2026 Hanwha Investment &amp; Securities Co., Ltd. All rights reserved.</p>
+        <p class="site-footer__hint">
+          로컬 실행: <code>pip install -r requirements.txt</code> · <code>python server.py</code> ·
+          <code>OPENAI_API_KEY</code> (<code>.env</code>)
+        </p>
+      </footer>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

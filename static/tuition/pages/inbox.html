@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학자금 관리자 인박스</title>
+<style>
+  :root {
+    --blue:#1F4E79;--blue-mid:#2E75B6;--blue-light:#DEEBF7;--blue-pale:#EBF3FF;
+    --green-badge:#1a7a3c;--green-light:#E2EFDA;
+    --amber-badge:#b45309;--amber-light:#FFF2CC;
+    --orange:#843C0C;--orange-light:#FCE4D6;
+    --red-badge:#991b1b;--red-light:#FFDDE0;
+    --gray:#595959;--gray-light:#F5F5F5;--border:#D9D9D9;--text:#1F1F1F;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:14px;color:var(--text);background:#F0F2F5;}
+
+  .topbar{background:var(--blue);color:#fff;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;}
+  .topbar h1{font-size:16px;font-weight:600;}
+  .topbar .meta{font-size:12px;opacity:.8;display:flex;align-items:center;gap:12px;}
+  .api-badge{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;}
+  .api-live{background:#1a7a3c;color:#fff;}
+  .api-demo{background:#b45309;color:#fff;}
+
+  .page{max-width:1280px;margin:0 auto;padding:20px 16px;display:grid;gap:16px;}
+
+  /* 통계 카드 */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .stat-card{background:#fff;border-radius:10px;border:1px solid var(--border);padding:14px 18px;display:flex;flex-direction:column;gap:4px;}
+  .stat-card .num{font-size:28px;font-weight:700;}
+  .stat-card .lbl{font-size:12px;color:var(--gray);}
+  .stat-card.urgent .num{color:var(--orange);}
+  .stat-card.warn .num{color:var(--amber-badge);}
+  .stat-card.ok .num{color:var(--green-badge);}
+  .stat-card.total .num{color:var(--blue-mid);}
+
+  /* 필터 바 */
+  .filter-bar{background:#fff;border-radius:10px;border:1px solid var(--border);padding:14px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .filter-bar label{font-size:12px;color:var(--gray);margin-right:4px;}
+  .filter-bar select,.filter-bar input{padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;}
+  .tab-group{display:flex;gap:4px;margin-right:8px;}
+  .tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--gray);transition:.15s;}
+  .tab.active{border-color:var(--blue-mid);background:var(--blue-pale);color:var(--blue-mid);}
+  .tab:hover:not(.active){background:var(--gray-light);}
+  .btn-search{padding:7px 18px;background:var(--blue-mid);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;}
+  .btn-refresh{padding:7px 14px;background:var(--gray-light);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;}
+  .btn-refresh:hover{background:var(--blue-pale);}
+
+  /* 테이블 */
+  .table-wrap{background:#fff;border-radius:10px;border:1px solid var(--border);overflow:hidden;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead tr{background:var(--blue-pale);}
+  th{padding:10px 12px;text-align:left;font-weight:700;color:var(--blue);font-size:12px;white-space:nowrap;border-bottom:1.5px solid var(--border);}
+  td{padding:10px 12px;border-bottom:1px solid var(--gray-light);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr.data-row:hover td{background:#FAFBFC;cursor:pointer;}
+
+  .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;}
+  .bg-green{background:var(--green-light);color:var(--green-badge);}
+  .bg-amber{background:var(--amber-light);color:var(--amber-badge);}
+  .bg-orange{background:var(--orange-light);color:var(--orange);}
+  .bg-red{background:var(--red-light);color:var(--red-badge);}
+  .bg-gray{background:var(--gray-light);color:var(--gray);}
+
+  .flag-chip{display:inline-block;background:var(--orange-light);color:var(--orange);font-size:10px;padding:1px 6px;border-radius:8px;margin:1px;font-weight:600;}
+  .warn-icon{font-size:12px;color:var(--orange);margin-left:4px;}
+
+  .amt-payable{color:var(--blue-mid);font-weight:700;}
+  .amt-diff{font-size:11px;color:var(--red-badge);}
+  .hist-chip{font-size:11px;color:var(--gray);background:var(--gray-light);padding:1px 6px;border-radius:6px;white-space:nowrap;}
+
+  .empty{text-align:center;padding:48px;color:var(--gray);font-size:14px;}
+  .loading{text-align:center;padding:48px;color:var(--blue-mid);font-size:14px;}
+
+  /* 페이지네이션 */
+  .pagination{display:flex;justify-content:center;gap:6px;padding:14px;}
+  .pg-btn{width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .pg-btn.active{background:var(--blue-mid);color:#fff;border-color:var(--blue-mid);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <a href="../../../../../../dashboard.html"
+       style="color:rgba(255,255,255,0.75);font-size:12px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.25);transition:.15s;"
+       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background=''"
+       title="HR Room 대시보드로 돌아가기">← Dashboard</a>
+    <h1>학자금 관리자 인박스</h1>
+  </div>
+  <span class="meta">
+    <span id="date-label">로딩 중...</span>
+    <span id="api-badge" class="api-badge api-demo">DEMO</span>
+  </span>
+</div>
+
+<div class="page">
+
+  <!-- 통계 카드 -->
+  <div class="stats">
+    <div class="stat-card urgent">
+      <div class="num" id="cnt-manual">—</div>
+      <div class="lbl">수기검토필요 — 우선 처리</div>
+    </div>
+    <div class="stat-card warn">
+      <div class="num" id="cnt-supplement">—</div>
+      <div class="lbl">보완필요 — 직원 연락 필요</div>
+    </div>
+    <div class="stat-card ok">
+      <div class="num" id="cnt-auto">—</div>
+      <div class="lbl">자동승인후보 — 검토 후 승인</div>
+    </div>
+    <div class="stat-card total">
+      <div class="num" id="cnt-total">—</div>
+      <div class="lbl">전체 처리 대기</div>
+    </div>
+  </div>
+
+  <!-- 필터 바 -->
+  <div class="filter-bar">
+    <div class="tab-group">
+      <div class="tab active" onclick="filterTab(this,'all')">전체</div>
+      <div class="tab" onclick="filterTab(this,'수기검토필요')">수기검토필요</div>
+      <div class="tab" onclick="filterTab(this,'보완필요')">보완필요</div>
+      <div class="tab" onclick="filterTab(this,'자동승인후보')">자동승인후보</div>
+      <div class="tab" onclick="filterTab(this,'반려')">반려</div>
+    </div>
+    <label>학교급</label>
+    <select id="school-filter" onchange="applyFilters()">
+      <option value="">전체</option>
+      <option value="유치원">유치원</option>
+      <option value="고등학교">고등학교</option>
+      <option value="대학교">대학교</option>
+    </select>
+    <label>신청일</label>
+    <input type="date" id="date-from" onchange="applyFilters()">
+    <span style="color:var(--gray);font-size:12px;">~</span>
+    <input type="date" id="date-to" onchange="applyFilters()">
+    <button class="btn-search" onclick="applyFilters()">조회</button>
+    <button class="btn-refresh" onclick="loadData()">↻ 새로고침</button>
+  </div>
+
+  <!-- 신청 목록 테이블 -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>신청일</th>
+          <th>신청자</th>
+          <th>자녀명</th>
+          <th>학교급</th>
+          <th>수혜기간</th>
+          <th>신청금액</th>
+          <th>지급가능금액</th>
+          <th>자동판정</th>
+          <th>주요 플래그</th>
+          <th>누적이력</th>
+          <th>상태</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="11" class="loading">데이터 로딩 중...</td></tr>
+      </tbody>
+    </table>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+</div>
+
+<script>
+// ─── 폴백 샘플 데이터 (API 연결 실패 시) ──────────────────────────────────
+const SAMPLE = [
+  {id:"APP-042",employee_id:"EMP003",applied_at:"2026-04-05T09:00:00",employee_name:"김철수",child_name:"김연우",child_id:"CHILD_HASH_001",school_type:"유치원",benefit_term:"2025-3분기",amount_requested:280000,amount_payable:280000,rule_status:"자동승인후보",flags:[],status:"evaluated",terms_used:2,terms_remaining:10,duplicate_suspected:false,limit_exhausted:false},
+  {id:"APP-041",employee_id:"EMP002",applied_at:"2026-04-04T14:30:00",employee_name:"이영희",child_name:"이민준",child_id:"CHILD_H002",school_type:"고등학교",benefit_term:"2025-3분기",amount_requested:1200000,amount_payable:1000000,rule_status:"자동승인후보",flags:["한도초과_200000원"],status:"evaluated",terms_used:3,terms_remaining:9,duplicate_suspected:false,limit_exhausted:false},
+  {id:"APP-040",employee_id:"EMP015",applied_at:"2026-04-04T11:20:00",employee_name:"박지훈",child_name:"박서연",child_id:"CHILD_H003",school_type:"대학교",benefit_term:"2025-2학기",amount_requested:3200000,amount_payable:0,rule_status:"보완필요",flags:["서류불일치"],status:"analyzed",terms_used:4,terms_remaining:4,duplicate_suspected:false,limit_exhausted:false},
+  {id:"APP-039",employee_id:"EMP020",applied_at:"2026-04-03T16:00:00",employee_name:"최민수",child_name:"최준혁",child_id:"CHILD_H004",school_type:"유치원",benefit_term:"2025-3분기",amount_requested:300000,amount_payable:0,rule_status:"수기검토필요",flags:["중복의심_2025-3분기"],status:"evaluated",terms_used:5,terms_remaining:7,duplicate_suspected:true,limit_exhausted:false},
+  {id:"APP-038",employee_id:"EMP010",applied_at:"2026-04-03T10:45:00",employee_name:"정유진",child_name:"정하은",child_id:"CHILD_HASH_003",school_type:"대학교",benefit_term:"2025-2학기",amount_requested:3200000,amount_payable:0,rule_status:"반려",flags:["한도소진"],status:"evaluated",terms_used:8,terms_remaining:0,duplicate_suspected:false,limit_exhausted:true},
+  {id:"APP-037",employee_id:"EMP008",applied_at:"2026-04-02T09:30:00",employee_name:"강동원",child_name:"강지우",child_id:"CHILD_H005",school_type:"고등학교",benefit_term:"2025-3분기",amount_requested:850000,amount_payable:850000,rule_status:"자동승인후보",flags:[],status:"evaluated",terms_used:1,terms_remaining:11,duplicate_suspected:false,limit_exhausted:false},
+  {id:"APP-036",employee_id:"EMP022",applied_at:"2026-04-02T08:10:00",employee_name:"윤서준",child_name:"윤채원",child_id:"CHILD_H006",school_type:"유치원",benefit_term:"2025-3분기",amount_requested:280000,amount_payable:0,rule_status:"보완필요",flags:["납부일_미확인"],status:"analyzed",terms_used:0,terms_remaining:12,duplicate_suspected:false,limit_exhausted:false},
+  {id:"APP-035",employee_id:"EMP017",applied_at:"2026-04-01T15:00:00",employee_name:"임현우",child_name:"임지호",child_id:"CHILD_H007",school_type:"대학교",benefit_term:"2025-2학기",amount_requested:3150000,amount_payable:3150000,rule_status:"자동승인후보",flags:[],status:"evaluated",terms_used:2,terms_remaining:6,duplicate_suspected:false,limit_exhausted:false},
+  {id:"APP-034",employee_id:"EMP028",applied_at:"2026-04-01T11:00:00",employee_name:"한수진",child_name:"한예린",child_id:"CHILD_H008",school_type:"유치원",benefit_term:"2025-3분기",amount_requested:350000,amount_payable:300000,rule_status:"자동승인후보",flags:["한도초과_50000원"],status:"evaluated",terms_used:3,terms_remaining:9,duplicate_suspected:false,limit_exhausted:false},
+  {id:"APP-033",employee_id:"EMP041",applied_at:"2026-03-31T13:20:00",employee_name:"오민준",child_name:"오시우",child_id:"CHILD_H009",school_type:"고등학교",benefit_term:"2025-3분기",amount_requested:980000,amount_payable:0,rule_status:"수기검토필요",flags:["서류식별불가"],status:"analyzed",terms_used:6,terms_remaining:6,duplicate_suspected:false,limit_exhausted:false},
+];
+
+let allData = [];
+let currentFilter = "all";
+let isLive = false;
+
+// 신규 API (applications.json 기반) + 기존 Azure Functions API 순서로 시도
+const NEW_API  = 'http://127.0.0.1:8765/api/tuition/admin/applications';
+const API_BASE = 'http://localhost:7071/api';
+
+// applications.json 데이터를 inbox 행 형식으로 변환
+function appToRow(a) {
+  const ocr = a.ocr || {};
+  const cr  = a.cross_ref || {};
+  return {
+    id: a.id,
+    employee_id: a.employee_id,       // ← 네비게이션에 필요
+    applied_at: a.submitted_at,
+    employee_name: a.employee_name || a.employee_id,
+    child_name: ocr.child_name || '—',
+    school_type: ocr.school_type || '—',
+    school_country: ocr.school_country || 'KR',
+    benefit_term: (ocr.benefit_year||'')+'년 '+(ocr.benefit_term||''),
+    amount_requested: ocr.amount_total || 0,
+    amount_payable: cr.amount_payable || 0,
+    rule_status: cr.verdict || '수기검토필요',
+    flags: cr.flags || [],
+    status: a.status || 'pending',
+    terms_used: cr.terms_used_ytd || 0,
+    terms_remaining: cr.terms_remaining || 0,
+    duplicate_suspected: cr.duplicate || false,
+    limit_exhausted: cr.terms_remaining === 0,
+  };
+}
+
+// ─── API 데이터 로드 ──────────────────────────────────────────────────────────
+async function loadData() {
+  document.getElementById("tbody").innerHTML = `<tr><td colspan="11" class="loading">데이터 로딩 중...</td></tr>`;
+
+  // ① 신규 엔드포인트 (applications.json)
+  try {
+    const res = await fetch(NEW_API, { signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      const json = await res.json();
+      allData = (Array.isArray(json) ? json : []).map(appToRow);
+      isLive = true;
+      document.getElementById("api-badge").textContent = "LIVE";
+      document.getElementById("api-badge").className = "api-badge api-live";
+      // 데이터가 없으면 SAMPLE로 보완
+      if (allData.length === 0) allData = SAMPLE;
+      const today = new Date().toISOString().slice(0,10);
+      const monthAgo = new Date(Date.now() - 30*864e5).toISOString().slice(0,10);
+      document.getElementById("date-from").value = monthAgo;
+      document.getElementById("date-to").value = today;
+      document.getElementById("date-label").textContent = `${today} 기준`;
+      updateStats(); applyFilters(); return;
+    }
+  } catch {}
+
+  // ② 기존 Azure Functions API 시도
+  try {
+    const res = await fetch(`${API_BASE}/tuition/admin/inbox`, { signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      const json = await res.json();
+      allData = json.items || [];
+      isLive = true;
+      document.getElementById("api-badge").textContent = "LIVE";
+      document.getElementById("api-badge").className = "api-badge api-live";
+    } else { throw new Error(); }
+  } catch (e) {
+    allData = SAMPLE;
+    isLive = false;
+    document.getElementById("api-badge").textContent = "DEMO";
+    document.getElementById("api-badge").className = "api-badge api-demo";
+  }
+
+  const today = new Date().toISOString().slice(0,10);
+  const monthAgo = new Date(Date.now() - 30*864e5).toISOString().slice(0,10);
+  document.getElementById("date-from").value = monthAgo;
+  document.getElementById("date-to").value = today;
+  document.getElementById("date-label").textContent = `${today} 기준`;
+
+  updateStats();
+  applyFilters();
+}
+
+// ─── 통계 카드 업데이트 ───────────────────────────────────────────────────────
+function updateStats() {
+  const cnt = (status) => allData.filter(r => r.rule_status === status).length;
+  document.getElementById("cnt-manual").textContent = cnt("수기검토필요");
+  document.getElementById("cnt-supplement").textContent = cnt("보완필요");
+  document.getElementById("cnt-auto").textContent = cnt("자동승인후보");
+  document.getElementById("cnt-total").textContent = allData.length;
+}
+
+// ─── 뱃지 스타일 ──────────────────────────────────────────────────────────────
+function badgeClass(rule) {
+  return {
+    "자동승인후보": "bg-green", "보완필요": "bg-amber",
+    "수기검토필요": "bg-orange", "반려": "bg-red"
+  }[rule] || "bg-gray";
+}
+
+function fmtAmt(n) { return n > 0 ? n.toLocaleString() + "원" : "—"; }
+function fmtDate(iso) { return iso ? iso.slice(0, 10) : "—"; }
+
+// ─── 행 렌더링 ────────────────────────────────────────────────────────────────
+function renderRows(data) {
+  const tbody = document.getElementById("tbody");
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="11" class="empty">조회된 신청 건이 없습니다.</td></tr>`;
+    updatePagination(0);
+    return;
+  }
+  tbody.innerHTML = data.map(r => {
+    const diff = r.amount_requested - r.amount_payable;
+    const diffHtml = diff > 0 ? `<div class="amt-diff">-${diff.toLocaleString()}원 조정</div>` : "";
+    const flagsHtml = (r.flags || []).map(f => `<span class="flag-chip">${f}</span>`).join("") || "—";
+    const dupWarn = r.duplicate_suspected ? `<span class="warn-icon" title="중복의심">⚠</span>` : "";
+    const limitWarn = r.limit_exhausted ? `<span class="warn-icon" title="한도소진">🚫</span>` : "";
+
+    // 누적이력 표시
+    let histHtml = "";
+    if (r.terms_remaining !== undefined && r.terms_remaining !== null) {
+      const pct = r.terms_used + r.terms_remaining > 0
+        ? Math.round((r.terms_used / (r.terms_used + r.terms_remaining)) * 100) : 0;
+      histHtml = `<span class="hist-chip">${r.terms_used}회/${r.terms_used + r.terms_remaining}회 (${pct}%)</span>`;
+    }
+
+    const url = `admin_review.html?id=${encodeURIComponent(r.id)}&emp=${encodeURIComponent(r.employee_id||'')}`;
+    return `<tr class="data-row" style="cursor:pointer" onclick="location.href='${url}'">
+      <td>${fmtDate(r.applied_at)}</td>
+      <td>${r.employee_name}</td>
+      <td>${r.child_name}${dupWarn}${limitWarn}</td>
+      <td>${r.school_type}</td>
+      <td>${r.benefit_term}</td>
+      <td>${fmtAmt(r.amount_requested)}</td>
+      <td><span class="amt-payable">${fmtAmt(r.amount_payable)}</span>${diffHtml}</td>
+      <td><span class="badge ${badgeClass(r.rule_status)}">${r.rule_status}</span></td>
+      <td>${flagsHtml}</td>
+      <td>${histHtml}</td>
+      <td><span class="badge bg-gray">${r.status}</span></td>
+    </tr>`;
+  }).join("");
+
+  updatePagination(data.length);
+}
+
+// ─── 페이지네이션 (심플) ──────────────────────────────────────────────────────
+function updatePagination(total) {
+  const pg = document.getElementById("pagination");
+  if (total <= 20) { pg.innerHTML = ""; return; }
+  pg.innerHTML = `<button class="pg-btn">‹</button><button class="pg-btn active">1</button><button class="pg-btn">›</button>`;
+}
+
+// ─── 필터 적용 ────────────────────────────────────────────────────────────────
+function applyFilters() {
+  const school = document.getElementById("school-filter").value;
+  const dateFrom = document.getElementById("date-from").value;
+  const dateTo = document.getElementById("date-to").value;
+
+  let data = allData;
+  if (currentFilter !== "all") data = data.filter(r => r.rule_status === currentFilter);
+  if (school) data = data.filter(r => r.school_type === school);
+  if (dateFrom) data = data.filter(r => fmtDate(r.applied_at) >= dateFrom);
+  if (dateTo) data = data.filter(r => fmtDate(r.applied_at) <= dateTo);
+
+  renderRows(data);
+}
+
+function filterTab(el, val) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  currentFilter = val;
+  applyFilters();
+}
+
+// ─── 초기 로드 ───────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
