@@ -282,14 +282,43 @@ async function handleFile(file){
   }
   document.getElementById('ocr-btn').disabled=false;
 }
+// 이미지 압축 헬퍼 — OCR API 전송 전 크기 축소 (속도 향상)
+function compressCanvas(srcCanvas, maxPx=800, quality=0.78){
+  const w=srcCanvas.width, h=srcCanvas.height;
+  const scale = Math.min(1, maxPx/Math.max(w,h));
+  const c=document.createElement('canvas');
+  c.width=Math.round(w*scale); c.height=Math.round(h*scale);
+  c.getContext('2d').drawImage(srcCanvas,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',quality).split(',')[1];
+}
 async function pdfToB64(file,canvas){
   if(!window.pdfjsLib)throw new Error('PDF.js 미로드');
   const buf=await file.arrayBuffer(),pdf=await pdfjsLib.getDocument({data:buf}).promise,page=await pdf.getPage(1);
-  const vp=page.getViewport({scale:2.0});canvas.width=vp.width;canvas.height=vp.height;
+  // scale 1.2 (기존 2.0 → 품질 유지하면서 크기 ↓)
+  const vp=page.getViewport({scale:1.2});canvas.width=vp.width;canvas.height=vp.height;
   await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
-  return canvas.toDataURL('image/png').split(',')[1];
+  return compressCanvas(canvas, 900, 0.80);  // JPEG 압축 후 전송
 }
-async function fileToB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]||'');r.onerror=()=>rej(r.error);r.readAsDataURL(file);});}
+async function fileToB64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      // 이미지 파일도 압축
+      const img=new Image();
+      img.onload=()=>{
+        const c=document.createElement('canvas');
+        const scale=Math.min(1,900/Math.max(img.width,img.height));
+        c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        res(c.toDataURL('image/jpeg',0.80).split(',')[1]);
+      };
+      img.onerror=()=>res(r.result.split(',')[1]||'');
+      img.src=r.result;
+    };
+    r.onerror=()=>rej(r.error);
+    r.readAsDataURL(file);
+  });
+}
 function resetUpload(){uploadedFile=null;imgB64=null;document.getElementById('finput').value='';document.getElementById('uicon').textContent='upload_file';document.getElementById('utitle').textContent='고지서 파일을 여기에 드래그하거나 클릭';document.getElementById('doc-prev').style.display='none';document.getElementById('ocr-btn').disabled=true;}
 
 async function startOcr(){
