@@ -189,7 +189,7 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
     <div class="sp act" id="p1">
       <div class="cd">
         <div class="ct">1단계 · OCR 추출 결과 vs 회사 DB 등록 정보 대조</div>
-        <div class="cs">신청 서류에서 AI가 읽어낸 정보와 회사 DB에 등록된 직원·자녀 정보를 항목별로 비교합니다.</div>
+        <div class="cs">OCR 문서에서 OCR 추출 정보와 회사 DB 등록 직원·자녀 정보를 항목별로 비교합니다.</div>
 
         <!-- OCR 신뢰도 개편: 수치 대신 등급 텍스트 -->
         <div style="display:flex;align-items:center;gap:10px;background:var(--low);border-radius:10px;padding:10px 14px;margin-bottom:12px;flex-wrap:wrap">
@@ -461,8 +461,11 @@ function renderAll(){
 /* ── Step 1 ── */
 function renderStep1(ocr,cr){
   const conf=Math.round((ocr.confidence||0)*100);
-  document.getElementById('conf-fill').style.width=conf+'%';
-  document.getElementById('conf-lbl').textContent=conf+'% 신뢰도';
+  const _cg=ocrGrade(conf);
+  const _cf=document.getElementById('conf-fill');
+  const _cl=document.getElementById('conf-lbl');
+  if(_cf){_cf.style.width=conf+'%';_cf.style.background=_cg.bar;}
+  if(_cl){_cl.textContent=_cg.label;_cl.style.background=_cg.bg;_cl.style.color=_cg.color;}
   document.getElementById('ov-pill').style.display=cr.is_overseas?'inline-block':'none';
 
   const reg=cr.child_registered||{};

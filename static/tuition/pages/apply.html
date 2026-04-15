@@ -183,7 +183,7 @@ input[type=file]{display:none;}
   <div id="s3" style="display:none">
     <div class="card">
       <div class="ctitle">AI 자동 추출 결과</div>
-      <div class="csub">고지서에서 읽어온 정보입니다. 확인 후 신청을 제출하세요.</div>
+      <div class="csub">OCR 추출 정보입니다. 확인 후 신청을 제출하세요.</div>
       <div class="conf-row">
         <span class="material-symbols-outlined" style="color:var(--orange);font-size:20px">analytics</span>
         <div style="flex:1">
@@ -322,8 +322,9 @@ function buildDemoOcr(fname){
 
 function showOcrResult(d){
   const conf=Math.round((d.confidence||0)*100);
-  document.getElementById('cfill').style.width=conf+'%';
-  document.getElementById('clbl').textContent=conf+'% 신뢰도';
+  const _og=ocrGrade(conf);
+  const _af=document.getElementById('cfill');if(_af){_af.style.width=conf+'%';_af.style.background=_og.bar;}
+  const _al=document.getElementById('clbl');if(_al){_al.textContent=_og.label;_al.style.background=_og.bg;_al.style.color=_og.color;}
   const isOverseas=d.school_country&&d.school_country!=='KR';
   document.getElementById('overseas-alert').style.display=isOverseas?'inline-flex':'none';
   const tag=(c,w)=>w?`<span class="ocr-tag warn">검토 필요</span>`:`<span class="ocr-tag">${c>=85?'OCR 확인':'저신뢰도'}</span>`;
