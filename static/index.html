@@ -450,7 +450,9 @@
 <script>
 (function() {
   /* ─────────── Constants ─────────── */
-  const RESUME_API_BASE = 'http://127.0.0.1:8765';
+  // 로컬이면 포트 8765, Render 배포이면 같은 origin 사용
+  const RESUME_API_BASE = (location.hostname === '127.0.0.1' || location.hostname === 'localhost')
+    ? 'http://127.0.0.1:8765' : '';
   const MIN_JD = 120;
   const SUPPORTED = /\.(pdf|docx|txt|md)$/i;
 

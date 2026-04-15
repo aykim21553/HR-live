@@ -442,9 +442,11 @@ h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;}
 const ACCESS_CODE = 'Ellis26Wond1';   // 12자리 영문+숫자
 /* ─────────────────────────────────────────────────────────── */
 
-const ELLIS_API = 'http://127.0.0.1:8765/api/ellis/analyze';
-const DOCX_API  = 'http://127.0.0.1:8765/api/ellis/generate-docx';
-const PARSE_API = 'http://127.0.0.1:8765/api/ellis/parse-file';
+const _ORIG2 = (location.hostname==='127.0.0.1'||location.hostname==='localhost')
+  ? 'http://127.0.0.1:8765' : '';
+const ELLIS_API = _ORIG2 + '/api/ellis/analyze';
+const DOCX_API  = _ORIG2 + '/api/ellis/generate-docx';
+const PARSE_API = _ORIG2 + '/api/ellis/parse-file';
 let memberCount = 0, analysisData = null, memberNames = {}, parsedMembers = [];
 
 /* ── Gate ── */

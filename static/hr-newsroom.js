@@ -172,7 +172,7 @@
     if(confGlobal)   confGlobal.innerHTML   = [1,2].map(()=>sk(200)).join("");
 
     try {
-      const res = await fetch("/api/hr-newsroom/digest", {
+      const res = await fetch(((location.hostname==="127.0.0.1"||location.hostname==="localhost")?"http://127.0.0.1:8765":"")+"/api/hr-newsroom/digest", {
         method: "POST",
         headers: { "Content-Type":"application/json" },
         body: JSON.stringify({ morning_days:2, education_days:30, conference_days:21 }),
