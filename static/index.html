@@ -88,6 +88,49 @@
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.55; transform: scale(0.88); }
   }
+
+  /* ── Agent Card Photo Style ── */
+  .agent-card-photo {
+    position: relative;
+    overflow: hidden;
+    min-height: 280px;
+  }
+  .agent-card-photo .card-photo-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: top right;
+    z-index: 0;
+    transition: transform 0.4s ease;
+  }
+  .agent-card-photo:hover .card-photo-bg {
+    transform: scale(1.03);
+  }
+  /* 좌측→우측 그라디언트 오버레이 (텍스트 가독성) */
+  .agent-card-photo .card-photo-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      rgba(255,255,255,0.98) 0%,
+      rgba(255,255,255,0.95) 35%,
+      rgba(255,255,255,0.80) 55%,
+      rgba(255,255,255,0.30) 75%,
+      rgba(255,255,255,0.05) 100%
+    );
+    z-index: 1;
+  }
+  .agent-card-photo .card-photo-content {
+    position: relative;
+    z-index: 2;
+    padding: 28px 28px 24px;
+    width: 62%;
+  }
+  @media (max-width: 640px) {
+    .agent-card-photo .card-photo-content { width: 90%; }
+    .agent-card-photo .card-photo-bg { background-position: right -40px top; }
+  }
+
   .orb-pulse { animation: pulse-orb 2.2s ease-in-out infinite; }
 
   /* Resume tool panel */
@@ -247,8 +290,11 @@
 
       <!-- 에이전트 배지 공통 스타일 인라인 -->
       <!-- 1. 학자금 — Agent Sophie -->
-      <div class="surface-card rounded-2xl p-8" style="cursor:default">
-        <div class="flex items-start justify-between mb-4">
+      <div class="surface-card rounded-2xl agent-card-photo" style="cursor:default">
+        <div class="card-photo-bg" style="background-image:url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=480&q=80')"></div>
+        <div class="card-photo-overlay"></div>
+        <div class="card-photo-content">
+          <div class="flex items-start justify-between mb-4">
           <div class="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center">
             <span class="material-symbols-outlined text-primary text-3xl">school</span>
           </div>
@@ -281,8 +327,11 @@
       </div>
 
       <!-- 2. Ellis in Wonderland — Agent Ellis -->
-      <a href="/ellis.html" class="surface-card surface-card-interactive rounded-2xl p-8 block group" style="text-decoration:none">
-        <div class="flex items-start justify-between mb-4">
+      <a href="/ellis.html" class="surface-card surface-card-interactive rounded-2xl agent-card-photo block group" style="text-decoration:none">
+        <div class="card-photo-bg" style="background-image:url('https://images.unsplash.com/photo-1580489944761-15a19d654956?w=480&q=80')"></div>
+        <div class="card-photo-overlay" style="background:linear-gradient(105deg,rgba(240,244,255,0.98) 0%,rgba(240,244,255,0.92) 38%,rgba(240,244,255,0.75) 55%,rgba(79,70,229,0.15) 80%,rgba(79,70,229,0.05) 100%)"></div>
+        <div class="card-photo-content">
+          <div class="flex items-start justify-between mb-4">
           <div class="w-14 h-14 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#f0f4ff,#e8edff)">
             <span class="material-symbols-outlined text-3xl" style="color:#4f46e5">psychology</span>
           </div>
@@ -309,9 +358,11 @@
       </a>
 
       <!-- 3. 이력서 직무 적합성 — Agent Remy -->
-      <div onclick="toggleResumeTool()"
-           class="surface-card surface-card-interactive rounded-2xl p-8 group cursor-pointer" id="resume-card">
-        <div class="flex items-start justify-between mb-4">
+      <div onclick="toggleResumeTool()" class="surface-card surface-card-interactive rounded-2xl agent-card-photo group cursor-pointer" id="resume-card">
+        <div class="card-photo-bg" style="background-image:url('https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=480&q=80')"></div>
+        <div class="card-photo-overlay" style="background:linear-gradient(105deg,rgba(243,232,255,0.98) 0%,rgba(243,232,255,0.92) 38%,rgba(243,232,255,0.7) 55%,rgba(98,91,113,0.15) 80%,rgba(98,91,113,0.05) 100%)"></div>
+        <div class="card-photo-content">
+          <div class="flex items-start justify-between mb-4">
           <div class="w-14 h-14 rounded-xl flex items-center justify-center" style="background: #F3E8FF">
             <span class="material-symbols-outlined text-3xl" style="color: #625B71">person_search</span>
           </div>
@@ -332,8 +383,11 @@
       </div>
 
       <!-- 4. HR News — Agent Eddy -->
-      <div class="surface-card rounded-2xl p-8" style="cursor:default">
-        <div class="flex items-start justify-between mb-4">
+      <div class="surface-card rounded-2xl agent-card-photo" style="cursor:default">
+        <div class="card-photo-bg" style="background-image:url('https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?w=480&q=80')"></div>
+        <div class="card-photo-overlay" style="background:linear-gradient(105deg,rgba(236,253,245,0.98) 0%,rgba(236,253,245,0.92) 38%,rgba(236,253,245,0.7) 55%,rgba(5,150,105,0.15) 80%,rgba(5,150,105,0.05) 100%)"></div>
+        <div class="card-photo-content">
+          <div class="flex items-start justify-between mb-4">
           <div class="w-14 h-14 rounded-xl flex items-center justify-center" style="background: #ECFDF5">
             <span class="material-symbols-outlined text-3xl" style="color:#059669">newspaper</span>
           </div>
