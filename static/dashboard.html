@@ -288,45 +288,140 @@
     <!-- ── Service Cards Grid ── -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
-      <!-- 에이전트 배지 공통 스타일 인라인 -->
       <!-- 1. 학자금 — Agent Sophie -->
-      <div class="surface-card rounded-2xl agent-card-photo" style="cursor:default">
-        <div class="card-photo-bg" style="background-image:url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=480&q=80')"></div>
-        <div class="card-photo-overlay"></div>
-        <div class="card-photo-content">
-          <div class="flex items-start justify-between mb-4">
-          <div class="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center">
-            <span class="material-symbols-outlined text-primary text-3xl">school</span>
+      <div class="surface-card rounded-2xl overflow-hidden" style="cursor:default;min-height:260px">
+        <div class="flex h-full" style="min-height:260px">
+          <!-- 왼쪽 컨텐츠 -->
+          <div class="flex flex-col p-7" style="flex:1;min-width:0">
+            <div class="flex items-start justify-between mb-4">
+              <div class="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-primary" style="font-size:26px">school</span>
+              </div>
+              <div class="flex flex-col items-end gap-1">
+                <span class="text-xs font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full">복리후생</span>
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:rgba(255,105,0,0.09);color:#FF6900">✦ Agent Sophie</span>
+              </div>
+            </div>
+            <h3 class="font-bold text-slate-900 mb-2 font-headline" style="font-size:1.1rem">학자금·경조금 신청 분석</h3>
+            <p class="text-slate-500 text-xs leading-relaxed mb-4" style="word-break:keep-all">Sophie가 규정 적격성·한도·중복 여부를 즉시 판정하고 기안문을 생성합니다.</p>
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-1.5 h-1.5 rounded-full bg-primary orb-pulse"></div>
+              <span class="text-xs font-semibold text-slate-400">Sophie 심사 엔진 활성</span>
+            </div>
+            <div class="flex gap-2 mt-auto" style="border-top:1px solid #f3f4f5;padding-top:14px">
+              <a href="/tuition/pages/inbox.html" class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold text-white" style="background:linear-gradient(135deg,#a14000,#FF6900);box-shadow:0 3px 10px rgba(255,105,0,0.25);text-decoration:none" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">
+                <span class="material-symbols-outlined" style="font-size:14px">inbox</span>관리자
+              </a>
+              <a href="/tuition/pages/apply.html" class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold" style="background:#fff;border:1.5px solid #e5e7eb;color:#49454E;text-decoration:none" onmouseover="this.style.background='#fff8f4';this.style.borderColor='#FF6900';this.style.color='#FF6900'" onmouseout="this.style.background='#fff';this.style.borderColor='#e5e7eb';this.style.color='#49454E'">
+                <span class="material-symbols-outlined" style="font-size:14px">upload_file</span>직원 신청
+              </a>
+            </div>
           </div>
-          <div class="flex flex-col items-end gap-1.5">
-            <span class="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full">복리후생</span>
-            <span class="text-xs font-bold px-3 py-1 rounded-full" style="background:rgba(255,105,0,0.09);color:#FF6900">✦ Agent Sophie</span>
+          <!-- 오른쪽 이미지 -->
+          <div class="relative overflow-hidden flex-shrink-0" style="width:42%;border-radius:0 1rem 1rem 0">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=85&fit=crop&crop=top" alt="" style="width:100%;height:100%;object-fit:cover;object-position:top center">
+            <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(255,255,255,0.4) 0%,transparent 40%)"></div>
           </div>
-        </div>
-        <h3 class="text-xl font-bold text-slate-900 mb-3 font-headline">학자금·경조금 신청 분석</h3>
-        <p class="text-slate-500 text-sm leading-relaxed mb-6" style="word-break:keep-all">학자금·경조금 신청을 Sophie가 자동 분석합니다.<br>규정 적격성·한도·중복 여부를 즉시 판정하고 기안문을 생성합니다.</p>
-        <div class="flex items-center gap-2 mb-4">
-          <div class="w-2 h-2 rounded-full bg-primary orb-pulse"></div>
-          <span class="text-xs font-semibold text-slate-400">Sophie 심사 엔진 활성</span>
-        </div>
-        <div class="flex gap-3" style="border-top: 1px solid #f3f4f5; padding-top: 16px">
-          <a href="/tuition/pages/inbox.html"
-             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
-             style="background: linear-gradient(135deg, #a14000, #FF6900); box-shadow: 0 4px 14px rgba(255,105,0,0.25); text-decoration:none;"
-             onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">
-            <span class="material-symbols-outlined" style="font-size:17px">inbox</span>관리자 인박스
-          </a>
-          <a href="/tuition/pages/apply.html"
-             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all"
-             style="background:#fff;border:1.5px solid #e5e7eb;color:#49454E;text-decoration:none;"
-             onmouseover="this.style.background='#fff8f4';this.style.borderColor='#FF6900';this.style.color='#FF6900'"
-             onmouseout="this.style.background='#fff';this.style.borderColor='#e5e7eb';this.style.color='#49454E'">
-            <span class="material-symbols-outlined" style="font-size:17px">upload_file</span>직원 신청
-          </a>
         </div>
       </div>
 
       <!-- 2. Ellis in Wonderland — Agent Ellis -->
+      <a href="/ellis.html" class="surface-card rounded-2xl overflow-hidden block surface-card-interactive group" style="min-height:260px;text-decoration:none">
+        <div class="flex h-full" style="min-height:260px">
+          <div class="flex flex-col p-7" style="flex:1;min-width:0">
+            <div class="flex items-start justify-between mb-4">
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,#f0f4ff,#e8edff)">
+                <span class="material-symbols-outlined" style="font-size:26px;color:#4f46e5">psychology</span>
+              </div>
+              <div class="flex flex-col items-end gap-1">
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:#f0f0ff;color:#4f46e5">Feedback</span>
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:rgba(79,70,229,0.09);color:#4f46e5">✦ Agent Ellis</span>
+              </div>
+            </div>
+            <h3 class="font-bold text-slate-900 mb-0.5 font-headline" style="font-family:'Dancing Script',cursive;font-size:1.25rem">Ellis in Wonderland</h3>
+            <p class="text-xs font-bold mb-2" style="color:#4f46e5">Feedback Analysis</p>
+            <p class="text-slate-500 text-xs leading-relaxed mb-4" style="word-break:keep-all">팀원에게 준 피드백을 5개 축으로 분석합니다.<br>객관성·공정성·균형성·일관성·문화 적합성 지표화.</p>
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-1.5 h-1.5 rounded-full orb-pulse" style="background:#4f46e5"></div>
+              <span class="text-xs font-semibold" style="color:#4f46e5">Ellis 분석 엔진 활성</span>
+            </div>
+            <div class="mt-auto" style="border-top:1px solid #f3f4f5;padding-top:14px">
+              <div class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold text-white" style="background:linear-gradient(135deg,#312e81,#4f46e5);box-shadow:0 3px 10px rgba(79,70,229,0.28)">
+                <span>🐇</span>원더랜드 입장
+              </div>
+            </div>
+          </div>
+          <div class="relative overflow-hidden flex-shrink-0" style="width:42%;border-radius:0 1rem 1rem 0">
+            <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&q=85&fit=crop&crop=top" alt="" style="width:100%;height:100%;object-fit:cover;object-position:top center">
+            <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(240,244,255,0.45) 0%,transparent 40%)"></div>
+          </div>
+        </div>
+      </a>
+
+      <!-- 3. 이력서 직무 적합성 — Agent Remy -->
+      <div onclick="toggleResumeTool()" class="surface-card surface-card-interactive rounded-2xl overflow-hidden group cursor-pointer" id="resume-card" style="min-height:260px">
+        <div class="flex h-full" style="min-height:260px">
+          <div class="flex flex-col p-7" style="flex:1;min-width:0">
+            <div class="flex items-start justify-between mb-4">
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#F3E8FF">
+                <span class="material-symbols-outlined" style="font-size:26px;color:#625B71">person_search</span>
+              </div>
+              <div class="flex flex-col items-end gap-1">
+                <span class="text-xs font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full">채용</span>
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:rgba(98,91,113,0.09);color:#625B71">✦ Agent Remy</span>
+              </div>
+            </div>
+            <h3 class="font-bold text-slate-900 mb-2 font-headline" style="font-size:1.05rem">이력서 요약 및 직무 적합성 분석</h3>
+            <p class="text-slate-500 text-xs leading-relaxed mb-4" style="word-break:keep-all">Remy가 이력서를 핵심 역량 중심으로 요약하고<br>RAG + LLM으로 기술·문화 적합성을 평가합니다.</p>
+            <div class="flex items-center justify-between mt-auto" style="border-top:1px solid #f8f9fa;padding-top:14px">
+              <div class="flex items-center gap-2">
+                <div id="resume-orb" class="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+                <span id="resume-card-status" class="text-xs font-semibold text-slate-400">클릭하여 분석 워크스페이스 열기</span>
+              </div>
+              <span id="resume-card-arrow" class="material-symbols-outlined text-slate-300 group-hover:text-secondary transition-colors">expand_more</span>
+            </div>
+          </div>
+          <div class="relative overflow-hidden flex-shrink-0" style="width:42%;border-radius:0 1rem 1rem 0">
+            <img src="https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=400&q=85&fit=crop&crop=top" alt="" style="width:100%;height:100%;object-fit:cover;object-position:top center">
+            <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(243,232,255,0.45) 0%,transparent 40%)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. HR News — Agent Eddy -->
+      <div class="surface-card rounded-2xl overflow-hidden" style="cursor:default;min-height:260px">
+        <div class="flex h-full" style="min-height:260px">
+          <div class="flex flex-col p-7" style="flex:1;min-width:0">
+            <div class="flex items-start justify-between mb-4">
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#ECFDF5">
+                <span class="material-symbols-outlined" style="font-size:26px;color:#059669">newspaper</span>
+              </div>
+              <div class="flex flex-col items-end gap-1">
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:#ECFDF5;color:#059669">노무·HR 뉴스</span>
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:rgba(5,150,105,0.09);color:#059669">✦ Agent Eddy</span>
+              </div>
+            </div>
+            <h3 class="font-bold text-slate-900 mb-2 font-headline" style="font-size:1.1rem">HR News</h3>
+            <p class="text-slate-500 text-xs leading-relaxed mb-4" style="word-break:keep-all">Eddy가 노무·채용·교육 조간 브리핑,<br>역량개발 교육·컨퍼런스 일정을 큐레이션합니다.</p>
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-1.5 h-1.5 rounded-full orb-pulse" style="background:#059669"></div>
+              <span class="text-xs font-semibold" style="color:#059669;font-weight:700">뉴스 에이전틱 Eddy 풀가동!</span>
+            </div>
+            <div class="mt-auto" style="border-top:1px solid #f3f4f5;padding-top:14px">
+              <a href="/hr-newsroom.html" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold text-white" style="background:linear-gradient(135deg,#065f46,#059669);box-shadow:0 3px 10px rgba(5,150,105,0.25);text-decoration:none" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">
+                <span class="material-symbols-outlined" style="font-size:16px">open_in_new</span>HR News 열기
+              </a>
+            </div>
+          </div>
+          <div class="relative overflow-hidden flex-shrink-0" style="width:42%;border-radius:0 1rem 1rem 0">
+            <img src="https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?w=400&q=85&fit=crop&crop=top" alt="" style="width:100%;height:100%;object-fit:cover;object-position:top center">
+            <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(236,253,245,0.45) 0%,transparent 40%)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+          <!-- 2. Ellis in Wonderland — Agent Ellis -->
       <a href="/ellis.html" class="surface-card surface-card-interactive rounded-2xl agent-card-photo block group" style="text-decoration:none">
         <div class="card-photo-bg" style="background-image:url('https://images.unsplash.com/photo-1580489944761-15a19d654956?w=480&q=80')"></div>
         <div class="card-photo-overlay" style="background:linear-gradient(105deg,rgba(240,244,255,0.98) 0%,rgba(240,244,255,0.92) 38%,rgba(240,244,255,0.75) 55%,rgba(79,70,229,0.15) 80%,rgba(79,70,229,0.05) 100%)"></div>
@@ -724,6 +819,8 @@
     analyzeBtn.disabled = true;
     resultsSection.classList.add('hidden');
     const total = selectedFiles.length;
+    // 벚꽃 애니메이션 시작
+    const _sk=document.getElementById('sakura-overlay');if(_sk)_sk.style.display='flex';
 
     const resumes = [];
     for (let i = 0; i < total; i++) {
@@ -739,9 +836,11 @@
       const payload = await apiPost('/api/score-resumes', { jd_text: jd, resumes, top_k: 5 });
       renderResults(payload);
       setProgress(`완료. 총 ${payload.results.length}명 분석됨.`);
+      const _sk2=document.getElementById('sakura-overlay');if(_sk2)_sk2.style.display='none';
       const skOv2=document.getElementById('sakura-overlay');if(skOv2)skOv2.style.display='none';
     } catch(e) {
       showError(e.message || '분석 요청 실패');
+      const _sk3=document.getElementById('sakura-overlay');if(_sk3)_sk3.style.display='none';
       setProgress('');
       const skOv3=document.getElementById('sakura-overlay');if(skOv3)skOv3.style.display='none';
     }
