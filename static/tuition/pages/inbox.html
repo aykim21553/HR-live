@@ -196,24 +196,29 @@ const API_BASE = 'http://localhost:7071/api';
 function appToRow(a) {
   const ocr = a.ocr || {};
   const cr  = a.cross_ref || {};
+  const termStr = ocr.benefit_year
+    ? (ocr.benefit_year + '년 ' + (ocr.benefit_term || ''))
+    : (cr.benefit_term || a.benefit_term || '—');
   return {
-    id: a.id,
-    employee_id: a.employee_id,       // ← 네비게이션에 필요
-    applied_at: a.submitted_at,
-    employee_name: a.employee_name || a.employee_id,
-    child_name: ocr.child_name || '—',
-    school_type: ocr.school_type || '—',
-    school_country: ocr.school_country || 'KR',
-    benefit_term: (ocr.benefit_year||'')+'년 '+(ocr.benefit_term||''),
-    amount_requested: ocr.amount_total || 0,
-    amount_payable: cr.amount_payable || 0,
-    rule_status: cr.verdict || '수기검토필요',
-    flags: cr.flags || [],
-    status: a.status || 'pending',
-    terms_used: cr.terms_used_ytd || 0,
-    terms_remaining: cr.terms_remaining || 0,
-    duplicate_suspected: cr.duplicate || false,
-    limit_exhausted: cr.terms_remaining === 0,
+    id:              a.id,
+    employee_id:     a.employee_id,
+    applied_at:      a.submitted_at || a.applied_at,
+    employee_name:   a.employee_name || cr.employee_name || a.employee_id || '—',
+    child_name:      ocr.child_name || cr.child_registered?.name || a.child_name || '—',
+    school_type:     ocr.school_type || a.school_type || '—',
+    school_country:  ocr.school_country || 'KR',
+    benefit_term:    termStr,
+    amount_requested: ocr.amount_total || a.amount_requested || 0,
+    amount_payable:  cr.amount_payable ?? a.amount_payable ?? 0,
+    rule_status:     cr.verdict || a.rule_status || '수기검토필요',
+    flags:           cr.flags || a.flags || [],
+    status:          a.status || 'pending',
+    terms_used:      cr.terms_used_ytd ?? a.terms_used ?? 0,
+    terms_remaining: cr.terms_remaining ?? a.terms_remaining ?? 0,
+    duplicate_suspected: cr.duplicate || a.duplicate_suspected || false,
+    limit_exhausted: (cr.terms_remaining === 0) || a.limit_exhausted || false,
+    // OCR 원문 보존 (admin_review 이동 시 참조)
+    _has_ocr: !!(ocr.child_name || ocr.school_name),
   };
 }
 
@@ -323,7 +328,10 @@ function renderRows(data) {
       <td><span class="badge ${badgeClass(r.rule_status)}">${r.rule_status}</span></td>
       <td>${flagsHtml}</td>
       <td>${histHtml}</td>
-      <td><span class="badge bg-gray">${r.status}</span></td>
+      <td style="display:flex;align-items:center;gap:4px">
+        <span class="badge bg-gray">${r.status}</span>
+        ${r._has_ocr ? '' : '<span title="OCR 미완료" style="font-size:10px;color:#f59e0b">⚠</span>'}
+      </td>
     </tr>`;
   }).join("");
 

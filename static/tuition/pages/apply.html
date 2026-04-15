@@ -235,6 +235,7 @@ const _API_ORIGIN = (location.hostname==='127.0.0.1'||location.hostname==='local
   ? 'http://127.0.0.1:8765' : '';
 const API_BASE   = _API_ORIGIN + '/api';
 const SUBMIT_URL = _API_ORIGIN + '/api/tuition/submit';
+const OCR_URL    = _API_ORIGIN + '/api/ocr-invoice';
 let apiLive=false, uploadedFile=null, imgB64=null, ocrData=null, appId=null;
 
 // Init
@@ -243,7 +244,7 @@ checkApi();
 
 async function checkApi(){
   try{
-    const r=await fetch('http://127.0.0.1:8765/api/health',{signal:AbortSignal.timeout(2500)});
+    const r=await fetch(_API_ORIGIN+'/api/health',{signal:AbortSignal.timeout(5000)});
     if((await r.json()).ok){
       apiLive=true;
       document.getElementById('api-dot').className='api-dot live';
@@ -331,7 +332,12 @@ async function startOcr(){
 async function runOcr(){
   if(apiLive&&imgB64){
     try{
-      const r=await fetch(OCR_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image_base64:imgB64,filename:uploadedFile?.name||'invoice.jpg'})});
+      const r=await fetch(OCR_URL,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({image_base64:imgB64,filename:uploadedFile?.name||'invoice.jpg'}),
+        signal:AbortSignal.timeout(30000)   // 30초 타임아웃 — 초과 시 DEMO 폴백
+      });
       if(r.ok)return await r.json();
     }catch(e){console.warn('OCR 오류, DEMO:',e);}
   }

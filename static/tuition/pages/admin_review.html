@@ -448,6 +448,11 @@ function buildDemoApp(){
 function renderAll(){
   const ocr=appRec.ocr||{};
   const cr=appRec.cross_ref||{};
+  // OCR 데이터 없으면 Step1에 안내 표시
+  if(!ocr.child_name && !ocr.school_name){
+    const g=document.getElementById('ocr-basic');
+    if(g) g.innerHTML='<div style="grid-column:1/-1;padding:18px;text-align:center;color:#7A757F;font-size:13px">OCR 데이터가 없습니다. 신청 시 서류를 업로드했는지 확인하세요.</div>';
+  }
   // Sidebar
   document.getElementById('si-child').textContent=ocr.child_name||'—';
   document.getElementById('si-school').textContent=ocr.school_name||'—';
@@ -495,7 +500,7 @@ function renderStep1(ocr,cr){
   ].join('');
 
   // Notes
-  if(ocr.notes){
+  if(ocr && ocr.notes){
     document.getElementById('cmp-amount').insertAdjacentHTML('afterend',`<div style="margin-top:8px;background:var(--pale);border-radius:8px;padding:9px 13px;font-size:12px;color:var(--mu)"><b>서류 특이사항:</b> ${esc(ocr.notes)}</div>`);
   }
 
