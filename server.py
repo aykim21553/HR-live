@@ -40,7 +40,7 @@ ROOT = Path(__file__).resolve().parent
 # ══════════════════════════════════════════════════════════════
 # 학자금 데이터 경로 & 규정 상수
 # ══════════════════════════════════════════════════════════════
-_TUITION_DATA  = ROOT.parent / "claude" / "files" / "tuition_automation_source" / "tuition-automation" / "data"
+_TUITION_DATA  = ROOT / "data"
 _DB_FILE       = _TUITION_DATA / "payment_history_full.json"   # 7년 이력 DB
 _APPS_FILE     = _TUITION_DATA / "applications.json"           # 신청 접수 store
 
@@ -1736,12 +1736,12 @@ def health():
 
 # ── 정적 파일 (마지막에 마운트) ───────────────────────────────
 # 학자금 튜이션 웹앱 서빙 (/tuition/ 접두사)
-_TUITION_WEBAPP = ROOT.parent / "claude" / "files" / "tuition_automation_source" / "tuition-automation" / "webapp"
+_TUITION_WEBAPP = ROOT / "static" / "tuition"
 if _TUITION_WEBAPP.exists():
     app.mount("/tuition", StaticFiles(directory=str(_TUITION_WEBAPP)), name="tuition")
 
 # cursor/ 정적 파일 (catch-all — 반드시 마지막)
-app.mount("/", StaticFiles(directory=str(ROOT), html=True), name="site")
+app.mount("/", StaticFiles(directory=str(ROOT / "static"), html=True), name="site")
 
 
 if __name__ == "__main__":
