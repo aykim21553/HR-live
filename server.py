@@ -632,7 +632,7 @@ def _build_draft_template(app_id, emp_name, emp_id, ocr, cr):
     return f"""                학 자 금 지 급 신 청 기 안
 
 ─────────────────────────────────────────────────────
-수    신 : 인사혁신지원실장
+수    신 : 혁신지원실장
 기 안 일 : {today}
 기 안 자 : {emp_name} ({emp_id})
 결 재 선 : 팀장 → 본부장 (학자금 지원 규정 제12조)
@@ -1325,18 +1325,18 @@ def _llm_generate_edu_conf(client: "_anthropic.Anthropic") -> dict:
     from datetime import timedelta
     today = datetime.now()
     today_str   = today.strftime("%Y년 %m월 %d일")
-    date_from   = (today + timedelta(weeks=3)).strftime("%Y년 %m월 %d일")
-    date_to     = (today + timedelta(days=60)).strftime("%Y년 %m월 %d일")
+    date_from   = today.strftime("%Y년 %m월 %d일")          # 오늘부터
+    date_to     = (today + timedelta(days=60)).strftime("%Y년 %m월 %d일")  # 2개월 후
 
-    prompt = f"""당신은 한화투자증권 인사혁신지원실에서 인사팀 직원들의 역량개발을 지원하는 전문가입니다.
+    prompt = f"""당신은 한화투자증권 혁신지원실에서 인사팀 직원들의 역량개발을 지원하는 전문가입니다.
 현재 날짜: {today_str}
 
 ⚠️ 중요 제약: 교육과 컨퍼런스의 일정은 반드시 **{date_from} ~ {date_to}** 사이에 시작하는 것만 포함하세요.
-(현재 날짜 기준 3주 후 ~ 2개월 후 범위. 이 기간 밖의 일정은 절대 포함하지 마세요.)
+(오늘 ~ 2개월 후 범위. 이 기간 밖의 일정은 절대 포함하지 마세요.)
 
 아래 두 가지를 JSON 형식으로 작성해주세요. JSON 외 다른 텍스트 없이 출력하세요.
 
-1. **인사팀 추천 역량개발 교육** (6건)
+1. **인재관리팀 팀원에게 추천하는 역량개발 교육** (6건)
 반드시 아래 기관들을 우선 포함하여 다양하게 구성하세요:
 - 중앙경제교육원 (중앙일보 계열, 비즈니스·HR 교육)
 - 한국생산성본부 (KPC, 경영·HRD·디지털 역량)

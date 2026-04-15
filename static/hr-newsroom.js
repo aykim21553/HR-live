@@ -20,8 +20,8 @@
 
   // ── 날짜 범위 계산 및 UI 표시 ──
   const today    = new Date();
-  const dateFrom = addDays(today, 21);
-  const dateTo   = addDays(today, 60);
+  const dateFrom = today;              // 오늘부터
+  const dateTo   = addDays(today, 60); // 2개월 후
   const rangeStr = `${fmtKo(dateFrom)} ~ ${fmtKo(dateTo)}`;
 
   const dateRangeLabel = document.getElementById("date-range-label");
@@ -75,7 +75,7 @@
         <div class="edu-card">
           <div class="edu-card-head">
             <div class="edu-title">
-              <a href="${esc(it.url||'#')}" target="_blank" rel="noopener">${esc(it.title)}</a>
+              <a href="https://www.google.com/search?q=${encodeURIComponent(it.title+' '+it.organizer)}" target="_blank" rel="noopener">${esc(it.title)}</a>
             </div>
             <span class="edu-format-pill ${fmtCls}">${esc(it.format||"")}</span>
           </div>
@@ -120,7 +120,7 @@
       <div class="${cardCls}">
         <div class="conf-card-head">
           <div class="conf-title">
-            <a href="${esc(it.url||'#')}" target="_blank" rel="noopener">${esc(it.title)}</a>
+            <a href="https://www.google.com/search?q=${encodeURIComponent(it.title+' '+it.organizer)}" target="_blank" rel="noopener">${esc(it.title)}</a>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
             <span class="conf-type-pill ${typeCls}">${isGlobal?"🌐 글로벌":"🇰🇷 국내"}</span>

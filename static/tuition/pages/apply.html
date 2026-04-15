@@ -231,9 +231,10 @@ input[type=file]{display:none;}
 </div>
 
 <script>
-const OCR_URL  = 'http://127.0.0.1:8765/api/ocr-invoice';
-const API_BASE   = 'http://localhost:7071/api';
-const SUBMIT_URL = 'http://127.0.0.1:8765/api/tuition/submit';  // 신규 엔드포인트
+const _API_ORIGIN = (location.hostname==='127.0.0.1'||location.hostname==='localhost')
+  ? 'http://127.0.0.1:8765' : '';
+const API_BASE   = _API_ORIGIN + '/api';
+const SUBMIT_URL = _API_ORIGIN + '/api/tuition/submit';
 let apiLive=false, uploadedFile=null, imgB64=null, ocrData=null, appId=null;
 
 // Init
