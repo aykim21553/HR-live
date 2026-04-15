@@ -188,7 +188,7 @@ let currentFilter = "all";
 let isLive = false;
 
 // 신규 API (applications.json 기반) + 기존 Azure Functions API 순서로 시도
-const _ORIG = (location.hostname==='127.0.0.1'||location.hostname==='localhost') ? 'http://127.0.0.1:8765' : '';
+const _INBOX_ORIG = (location.hostname==='127.0.0.1'||location.hostname==='localhost') ? 'http://127.0.0.1:8765' : '';
 const NEW_API  = _ORIG + '/api/tuition/admin/applications';
 const API_BASE = 'http://localhost:7071/api';
 

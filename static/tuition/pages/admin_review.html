@@ -422,16 +422,24 @@ document.getElementById('si-emp').textContent=EMP_ID;
 checkApi().then(()=>loadApp());
 
 async function checkApi(){
-  try{const r=await fetch('http://127.0.0.1:8765/api/health',{signal:AbortSignal.timeout(2500)});if((await r.json()).ok){apiLive=true;document.getElementById('api-dot').className='ad live';document.getElementById('api-lbl').textContent='API 연결됨';}}
+  try{const r=await fetch(_ADMIN_ORIG+'/api/health',{signal:AbortSignal.timeout(2500)});if((await r.json()).ok){apiLive=true;document.getElementById('api-dot').className='ad live';document.getElementById('api-lbl').textContent='API 연결됨';}}
   catch{document.getElementById('api-lbl').textContent='DEMO 모드';}
 }
 
 async function loadApp(){
-  if(apiLive && APP_ID){
+  if(APP_ID && APP_ID !== 'APP-DEMO'){
+    // API 연결 여부와 관계없이 항상 서버에서 데이터 로드 시도
     try{
-      const r=await fetch(`${ADMIN_API}/${encodeURIComponent(APP_ID)}`);
-      if(r.ok){appRec=await r.json();}
-    }catch(e){console.warn('앱 로드 오류:',e);}
+      const r=await fetch(`${ADMIN_API}/${encodeURIComponent(APP_ID)}`,{signal:AbortSignal.timeout(30000)});
+      if(r.ok){
+        appRec=await r.json();
+        apiLive=true;
+        document.getElementById('api-dot').className='ad live';
+        document.getElementById('api-lbl').textContent='데이터 로드 완료';
+      }
+    }catch(e){
+      console.warn('앱 로드 오류:', e.message);
+    }
   }
   if(!appRec) appRec=buildDemoApp();
   renderAll();
