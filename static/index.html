@@ -484,25 +484,37 @@
 
   /* ─────────── API health check ─────────── */
   async function checkHealth() {
+    const isRender = location.hostname !== '127.0.0.1' && location.hostname !== 'localhost';
+    const tout = isRender ? 65000 : 5000;
+    if (isRender) {
+      setApiBadge('wait', '서버 초기화 중… (최대 60초)');
+      setGlobalBadge('wait', '초기화 중…');
+    }
     try {
-      const r = await fetch(RESUME_API_BASE + '/api/health', { signal: AbortSignal.timeout(3000) });
+      const r = await fetch(RESUME_API_BASE + '/api/health', { signal: AbortSignal.timeout(tout) });
       const h = await r.json();
-      if (h.openai_configured) {
+      if (h.ok || h.openai_configured) {
         apiReady = true;
-        setApiBadge('ok', '이력서 분석 서버 연결됨 · Claude ' + (h.model || ''));
+        setApiBadge('ok', '서버 연결됨 · Claude ' + (h.model || 'Haiku'));
         setGlobalBadge('ok', '서버 연결됨');
         resumeOrb.className = 'w-2 h-2 rounded-full bg-primary orb-pulse';
         resumeCardStatus.textContent = '분석 워크스페이스 열기 · 서버 활성';
       } else {
         apiReady = false;
-        setApiBadge('bad', 'ANTHROPIC_API_KEY 미설정 — .env 확인');
+        setApiBadge('bad', 'API 키 미설정');
         setGlobalBadge('bad', 'API 키 없음');
       }
-    } catch {
+    } catch(e) {
       apiReady = false;
-      setApiBadge('bad', '이력서 서버 오프라인');
-      setGlobalBadge('bad', '이력서 서버 미실행');
-      resumeCardStatus.textContent = '서버 오프라인 · python server.py 실행 필요';
+      if (isRender) {
+        setApiBadge('wait', '서버 웜업 중… 10초 후 재시도');
+        setGlobalBadge('wait', '웜업 중…');
+        setTimeout(() => checkHealth(), 10000);
+      } else {
+        setApiBadge('bad', '서버 오프라인 — python server.py 실행 필요');
+        setGlobalBadge('bad', '서버 오프라인');
+        resumeCardStatus.textContent = 'python server.py 실행 후 새로고침';
+      }
     }
     healthChecked = true;
     syncAnalyzeEnabled();
