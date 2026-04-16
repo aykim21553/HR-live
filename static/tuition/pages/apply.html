@@ -364,7 +364,12 @@ async function startOcr(){
   if(ptitle) ptitle.textContent='분석 완료!';
   if(psub) psub.textContent='';
   await sleep(400);
-  showOcrResult(ocrData);
+  try{
+    showOcrResult(ocrData);
+  }catch(err){
+    console.error('showOcrResult 오류:', err);
+    goStep(3); // 에러가 나도 step3로 강제 이동
+  }
 }
 async function runOcr(){
   // apiLive 조건 제거 — 항상 실제 API 먼저 시도 (서버 웜업 중이어도)
@@ -397,13 +402,21 @@ function buildDemoOcr(fname){
   }
 }
 
+function ocrGrade(conf){
+  if(conf>=90) return {label:'우수',     bg:'rgba(13,107,71,0.09)',  color:'#0d6b47', bar:'#059669'};
+  if(conf>=75) return {label:'양호',     bg:'rgba(79,70,229,0.09)',  color:'#4f46e5', bar:'#4f46e5'};
+  if(conf>=55) return {label:'보통',     bg:'rgba(201,120,0,0.09)',  color:'#a16400', bar:'#d97706'};
+  if(conf>=35) return {label:'저화질',   bg:'rgba(234,88,12,0.10)',  color:'#c2410c', bar:'#ea580c'};
+  return         {label:'재시도 필요',   bg:'rgba(186,26,26,0.08)',  color:'#9b1b1b', bar:'#dc2626'};
+}
 function showOcrResult(d){
+  if(!d){d={confidence:0,child_name:'—',school_name:'—',school_type:'—',school_country:'KR',payment_date:'—',amount_total:0,benefit_year:'—',benefit_term:'—',doc_type:'—'};}
   const conf=Math.round((d.confidence||0)*100);
   const _og=ocrGrade(conf);
   const _af=document.getElementById('cfill');if(_af){_af.style.width=conf+'%';_af.style.background=_og.bar;}
   const _al=document.getElementById('clbl');if(_al){_al.textContent=_og.label;_al.style.background=_og.bg;_al.style.color=_og.color;}
   const isOverseas=d.school_country&&d.school_country!=='KR';
-  document.getElementById('overseas-alert').style.display=isOverseas?'inline-flex':'none';
+  const _oa=document.getElementById('overseas-alert');if(_oa)_oa.style.display=isOverseas?'inline-flex':'none';
   const tag=(c,w)=>w?`<span class="ocr-tag warn">검토 필요</span>`:`<span class="ocr-tag">${c>=85?'OCR 확인':'저신뢰도'}</span>`;
   const fields=[
     {label:'자녀·학생명',val:d.child_name||'—',cls:''},
@@ -415,7 +428,7 @@ function showOcrResult(d){
     {label:'수혜연도·기간',val:d.benefit_year?`${d.benefit_year}년 ${d.benefit_term||'—'}`:'—',cls:''},
     {label:'서류 종류',val:d.doc_type||'—',cls:''},
   ];
-  document.getElementById('ocr-grid').innerHTML=fields.map(f=>`
+  const _og2=document.getElementById('ocr-grid');if(_og2)_og2.innerHTML=fields.map(f=>`
     <div class="ocr-field">${tag(conf,conf<70)}<div class="ofl">${f.label}</div><div class="ofv ${f.cls}">${esc(String(f.val))}</div></div>`).join('');
   goStep(3);
 }
