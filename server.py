@@ -644,7 +644,12 @@ def generate_draft_api(app_id: str):
 - DB대조결과: {cr.get('verdict_reason','—')}
 - 특이사항: {', '.join(cr.get('flags',[]) or ['없음'])}
 
-형식: 수신, 참조, 제목, 본문(신청개요·납부내역·지원금액·처리의견), 작성일, 작성부서"""
+형식 규칙 (반드시 준수):
+- 수신: 신청자 이름 ({emp}) 으로 고정
+- 참조: 항목 자체를 생략 (출력하지 말 것)
+- 작성부서: 인재관리팀 으로 고정
+- 본문 구성: 신청개요 → 납부내역 → 지원금액 → 처리의견
+- 작성일 포함"""
             msg = client.messages.create(model=CHAT_MODEL, max_tokens=1500,
                 messages=[{"role":"user","content":prompt}])
             draft = msg.content[0].text if msg.content else None
@@ -675,9 +680,9 @@ def _build_draft_template(app_id, emp_name, emp_id, ocr, cr):
     return f"""                학 자 금 지 급 신 청 기 안
 
 ─────────────────────────────────────────────────────
-수    신 : 혁신지원실장
+수    신 : {emp_name} ({emp_id})
 기 안 일 : {today}
-기 안 자 : {emp_name} ({emp_id})
+기 안 자 : 인재관리팀
 결 재 선 : 팀장 → 본부장 (학자금 지원 규정 제12조)
 ─────────────────────────────────────────────────────
 
@@ -704,7 +709,8 @@ def _build_draft_template(app_id, emp_name, emp_id, ocr, cr):
 
 ─────────────────────────────────────────────────────
 담당자: ______________  팀장: ______________  본부장: ______________
-─────────────────────────────────────────────────────"""
+─────────────────────────────────────────────────────
+작성부서: 인재관리팀"""
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1298,11 +1304,11 @@ async def ocr_invoice(body: OcrBody):
   "student_id": "학번(대학교만) 또는 null",
   "major": "학과(대학교만) 또는 null",
   "grade": "학년반(초중고/유치원) 또는 null",
-  "school_name": "학교/유치원/기관 전체 이름",
+  "school_name": "학교/유치원/기관 이름만 (원장·교장·총장 등 직함·인명 제외. 예: '미래유치원장' → '미래유치원')",
   "school_type": "유치원|초등학교|중학교|고등학교|대학교",
   "school_country": "KR(기본값, 해외면 US/UK/SG 등)",
   "school_address": "주소(있는 경우)",
-  "issuer_name": "교장/원장/총장 이름과 직함",
+  "issuer_name": "교장/원장/총장 이름과 직함 (school_name과 분리하여 여기에만 기재)",
   "issue_date": "발급일 YYYY-MM-DD",
   "payment_date": "납부일 YYYY-MM-DD(여러 건이면 가장 최근)",
   "benefit_year": 연도정수,
