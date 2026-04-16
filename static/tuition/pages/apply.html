@@ -167,8 +167,8 @@ input[type=file]{display:none;}
     <div class="card">
       <div class="proc-screen">
         <div class="orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
-        <div class="ptitle">고지서를 읽고 있습니다</div>
-        <div class="psub">Claude Vision AI가 문서를 분석합니다</div>
+        <div class="ptitle" id="proc-title">고지서를 읽고 있습니다</div>
+        <div class="psub" id="proc-sub">Claude Vision AI가 문서를 분석합니다</div>
         <div class="psteps">
           <div class="ps run" id="oc1"><span class="material-symbols-outlined">image</span>이미지 변환</div>
           <div class="ps" id="oc2"><span class="material-symbols-outlined">document_scanner</span>텍스트 인식 (OCR)</div>
@@ -330,10 +330,41 @@ function resetUpload(){uploadedFile=null;imgB64=null;document.getElementById('fi
 
 async function startOcr(){
   goStep(2);
-  const steps=['oc1','oc2','oc3','oc4'],delays=[600,900,800,500];
-  const ocrP=runOcr();
-  for(let i=0;i<steps.length;i++){document.getElementById(steps[i]).className='ps run';await sleep(delays[i]);document.getElementById(steps[i]).className='ps done-s';const ic=document.getElementById(steps[i]).querySelector('.material-symbols-outlined');if(ic)ic.textContent='check_circle';}
-  ocrData=await ocrP;await sleep(300);showOcrResult(ocrData);
+  // 1~3단계 애니메이션 (약 2.3초)
+  const steps=['oc1','oc2','oc3'];
+  const delays=[700,900,800];
+  const ocrP=runOcr(); // OCR API 병렬 시작
+  for(let i=0;i<steps.length;i++){
+    document.getElementById(steps[i]).className='ps run';
+    await sleep(delays[i]);
+    document.getElementById(steps[i]).className='ps done-s';
+    const ic=document.getElementById(steps[i]).querySelector('.material-symbols-outlined');
+    if(ic)ic.textContent='check_circle';
+  }
+  // 4단계: OCR 대기 중 표시 (점 깜빡임)
+  const s4=document.getElementById('oc4');
+  s4.className='ps run';
+  // 경과 시간 표시
+  const ptitle=document.getElementById('proc-title')||document.querySelector('.ptitle');
+  const psub=document.getElementById('proc-sub')||document.querySelector('.psub');
+  if(ptitle) ptitle.textContent='AI가 서류를 분석하고 있습니다';
+  if(psub) psub.textContent='서버 처리 중... 최대 60초 소요됩니다';
+  let elapsed=0;
+  const timer=setInterval(()=>{
+    elapsed++;
+    if(psub) psub.textContent=`서버 처리 중... ${elapsed}초 경과 (최대 60초)`;
+  },1000);
+  // OCR 완료 대기
+  ocrData=await ocrP;
+  clearInterval(timer);
+  // 4단계 완료
+  s4.className='ps done-s';
+  const ic4=s4.querySelector('.material-symbols-outlined');
+  if(ic4)ic4.textContent='check_circle';
+  if(ptitle) ptitle.textContent='분석 완료!';
+  if(psub) psub.textContent='';
+  await sleep(400);
+  showOcrResult(ocrData);
 }
 async function runOcr(){
   // apiLive 조건 제거 — 항상 실제 API 먼저 시도 (서버 웜업 중이어도)
