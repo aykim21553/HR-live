@@ -653,9 +653,10 @@ async function generateAndDownload(){
 
 /* ── Step 4: Draft Generation ── */
 async function generateDraft(){
-  const btn=document.getElementById('gen-btn');
-  btn.disabled=true;btn.textContent='생성 중…';
-  document.getElementById('draft-area').textContent='AI가 기안문을 작성하고 있습니다…';
+  const areaEl = document.getElementById('draft-area');
+  if(areaEl) areaEl.textContent='AI가 기안문을 작성하고 있습니다…';
+  const regenBtn = document.querySelector('#draft-card .btn-g');
+  if(regenBtn){ regenBtn.disabled=true; regenBtn.textContent='생성 중…'; }
 
   let draft=null;
   // API 시도 (로컬 또는 Render 서버)
@@ -664,15 +665,14 @@ async function generateDraft(){
       const r=await fetch(`${DRAFT_API}/${encodeURIComponent(APP_ID)}/draft`,{
         method:'POST', signal:AbortSignal.timeout(10000)
       });
-      if(r.ok){const j=await r.json();draft=j.draft_text;}
+      if(r.ok){const j=await r.json();draft=j.draft_text||j.draft;}
     }catch(e){console.warn('Draft API 오류 (로컬 템플릿 사용):', e.message);}
   }
   // API 실패 또는 APP_ID 없으면 로컬 템플릿으로 즉시 생성
   if(!draft) draft=buildDraftLocal();
   draftTxt=draft;
-  document.getElementById('draft-area').textContent=draft;
-  document.getElementById('dl-btn').style.display='';
-  btn.disabled=false;btn.innerHTML='✨ 재생성';
+  if(areaEl) areaEl.textContent=draft;
+  if(regenBtn){ regenBtn.disabled=false; regenBtn.textContent='✨ 재생성'; }
 }
 
 function buildDraftLocal(){
@@ -902,6 +902,14 @@ function showStep(n){
 
 function mkBadge(s){const m={'자동승인후보':'bg','보완필요':'bv','수기검토필요':'ba','반려':'br'};return `<span class="bsm ${m[s]||'bz'}">${esc(s)}</span>`;}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// OCR 신뢰도 등급 — renderStep1()에서 호출
+function ocrGrade(conf){
+  if(conf>=90) return{label:`매우 높음 ${conf}%`,bar:'linear-gradient(90deg,#0a5a3c,#0d6b47)',bg:'rgba(13,107,71,0.1)',color:'#0d6b47'};
+  if(conf>=75) return{label:`높음 ${conf}%`,bar:'linear-gradient(90deg,#a14000,#FF6900)',bg:'rgba(255,105,0,0.1)',color:'#FF6900'};
+  if(conf>=55) return{label:`보통 ${conf}%`,bar:'linear-gradient(90deg,#7a5000,#a16400)',bg:'rgba(201,120,0,0.1)',color:'#a16400'};
+  return{label:`낮음 ${conf}%`,bar:'linear-gradient(90deg,#7a1010,#9b1b1b)',bg:'rgba(186,26,26,0.1)',color:'#9b1b1b'};
+}
 </script>
 </body>
 </html>

@@ -235,8 +235,7 @@ async function loadData() {
       isLive = true;
       document.getElementById("api-badge").textContent = "LIVE";
       document.getElementById("api-badge").className = "api-badge api-live";
-      // 데이터가 없으면 SAMPLE로 보완
-      if (allData.length === 0) allData = SAMPLE;
+      // 실제 접수 데이터가 없어도 SAMPLE로 대체하지 않음
       const today = new Date().toISOString().slice(0,10);
       const monthAgo = new Date(Date.now() - 30*864e5).toISOString().slice(0,10);
       document.getElementById("date-from").value = monthAgo;
@@ -261,6 +260,11 @@ async function loadData() {
     isLive = false;
     document.getElementById("api-badge").textContent = "DEMO";
     document.getElementById("api-badge").className = "api-badge api-demo";
+    // 서버 미연결 안내 배너
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#FFF2CC;border:1px solid #b45309;border-radius:8px;padding:10px 16px;font-size:12px;color:#7a3c00;margin-bottom:12px;display:flex;align-items:center;gap:8px;';
+    banner.innerHTML = '<b>⚠ DEMO 모드:</b>&nbsp;서버에 연결되지 않아 샘플 데이터를 표시합니다. 실제 신청 이력은 서버 연결 후 확인하세요.';
+    document.querySelector('.page').prepend(banner);
   }
 
   const today = new Date().toISOString().slice(0,10);

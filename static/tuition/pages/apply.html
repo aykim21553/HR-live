@@ -458,14 +458,14 @@ function showReceipt(id, verdict){
   document.getElementById('rcpt-num').textContent=id;
   const d=ocrData||{};
   const empId=document.getElementById('emp-id').value||'EMP001';
-  const verdictLabel={자동승인후보:'✅ 자동 승인 후보',보완필요:'📋 보완 필요',수기검토필요:'⏳ 수기 검토 필요',반려:'❌ 반려'}[verdict]||'접수 완료';
+  // 직원 화면에는 AI 판정 원시 결과 미노출 — 최종 결정은 관리자
   document.getElementById('rcpt-detail').innerHTML=[
     ['신청자 사번', empId],
     ['자녀명', d.child_name||'—'],
     ['학교명', d.school_name||'—'],
     ['납부금액', d.amount_total?(d.amount_total).toLocaleString()+'원':'—'],
     ['학교 국가', d.school_country&&d.school_country!=='KR'?`해외 (${d.school_country})`:'대한민국'],
-    ['AI 사전 판정', verdictLabel],
+    ['처리 상태', '⏳ 담당자 검토 예정'],
     ['접수 일시', new Date().toLocaleString('ko-KR')],
   ].map(([k,v])=>`<div class="rd-row"><span class="rd-k">${k}</span><span class="rd-v">${esc(String(v))}</span></div>`).join('');
   document.getElementById('admin-link').href=`admin_review.html?id=${encodeURIComponent(id)}&emp=${empId}`;
@@ -480,6 +480,13 @@ function resetAll(){
 
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function ocrGrade(conf){
+  if(conf>=90) return{label:`매우 높음 ${conf}%`,bar:'linear-gradient(90deg,#0a5a3c,#0d6b47)',bg:'rgba(13,107,71,0.1)',color:'#0d6b47'};
+  if(conf>=75) return{label:`높음 ${conf}%`,bar:'linear-gradient(90deg,#a14000,#FF6900)',bg:'rgba(255,105,0,0.1)',color:'#FF6900'};
+  if(conf>=55) return{label:`보통 ${conf}%`,bar:'linear-gradient(90deg,#7a5000,#a16400)',bg:'rgba(201,120,0,0.1)',color:'#a16400'};
+  return{label:`낮음 ${conf}%`,bar:'linear-gradient(90deg,#7a1010,#9b1b1b)',bg:'rgba(186,26,26,0.1)',color:'#9b1b1b'};
+}
 </script>
 </body>
 </html>
