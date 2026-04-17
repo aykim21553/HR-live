@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HR X · Agentic Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        "ox": "#FF6900",
+        "ox-dark": "#a14000",
+        "ox-light": "#FFF7ED",
+        "ox-border": "#FED7AA",
+      },
+      fontFamily: {
+        headline: ["Plus Jakarta Sans", "sans-serif"],
+        body: ["Inter", "sans-serif"],
+      }
+    }
+  }
+}
+</script>
+<style>
+  :root { --ox: #FF6900; --ox-dark: #a14000; }
+  body { font-family: 'Inter', sans-serif; background: #FFF8F2; }
+  h1,h2,h3,h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+
+  /* ── Header ── */
+  .top-bar { background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+             box-shadow: 0 1px 0 rgba(25,28,29,0.07); }
+
+  /* ── Gradient Button ── */
+  .grad-btn {
+    background: linear-gradient(135deg, #a14000 0%, #FF6900 100%);
+    color: #fff; border: none; cursor: pointer;
+    transition: filter 0.15s ease;
+  }
+  .grad-btn:hover { filter: brightness(1.08); }
+  .grad-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* ── Tab ── */
+  .tab-btn {
+    padding: 10px 20px; font-size: 0.88rem; font-weight: 600;
+    border-radius: 100px; cursor: pointer; transition: all 0.2s;
+    border: 1.5px solid transparent; color: #78716C;
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, #a14000 0%, #FF6900 100%);
+    color: #fff; box-shadow: 0 3px 12px rgba(255,105,0,0.30);
+  }
+  .tab-btn:not(.active):hover { background: #FFF7ED; border-color: #FED7AA; color: #EA580C; }
+
+  /* ── Cards ── */
+  .feat-card {
+    background: #fff; border-radius: 18px; padding: 28px 22px;
+    border: 1.5px solid #FED7AA;
+    box-shadow: 0 3px 14px rgba(249,115,22,0.07);
+    position: relative; overflow: hidden;
+  }
+  .feat-card::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #F97316, #FB923C);
+  }
+  .metric-card {
+    background: #fff; border-radius: 14px; padding: 18px 20px;
+    border: 1.5px solid #FED7AA;
+    box-shadow: 0 2px 10px rgba(249,115,22,0.06);
+  }
+  .metric-val { font-size: 1.6rem; font-weight: 800; color: #EA580C; }
+  .metric-label { font-size: 0.78rem; color: #A8A29E; font-weight: 500; margin-top: 2px; }
+
+  /* ── Form inputs ── */
+  .ox-input, .ox-select, .ox-textarea {
+    width: 100%; border: 1.5px solid #E7E5E4; border-radius: 10px;
+    padding: 10px 14px; font-size: 0.875rem; background: #fff;
+    transition: border-color 0.15s;
+    font-family: 'Inter', sans-serif;
+  }
+  .ox-input:focus, .ox-select:focus, .ox-textarea:focus {
+    outline: none; border-color: #FB923C;
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+  }
+  .ox-label { font-size: 0.8rem; font-weight: 600; color: #57534E; margin-bottom: 6px; display: block; }
+
+  /* ── Dev cards (Global HR) ── */
+  .dev-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 768px) { .dev-row { grid-template-columns: 1fr; } }
+
+  .dev-card {
+    background: #fff; border-radius: 14px; padding: 16px 18px;
+    border: 1.5px solid #FED7AA; transition: all 0.2s;
+  }
+  .dev-card:hover { box-shadow: 0 6px 22px rgba(249,115,22,0.12); transform: translateY(-1px); }
+
+  .score-bar-wrap { height: 6px; background: #F5F5F4; border-radius: 100px; overflow: hidden; margin-top: 4px; }
+  .score-bar { height: 100%; border-radius: 100px;
+               background: linear-gradient(90deg, #F97316, #FB923C); }
+
+  /* ── Skill chips ── */
+  .skill-chip {
+    display: inline-block; background: #FFF7ED; color: #C2410C;
+    border: 1px solid #FED7AA; border-radius: 100px;
+    padding: 2px 10px; font-size: 0.72rem; font-weight: 600;
+    margin: 2px 2px 2px 0;
+  }
+  .skill-chip.match { background: #EA580C; color: #fff; border-color: #EA580C; }
+
+  /* ── Result box ── */
+  .result-box {
+    background: #FFF7ED; border: 1.5px solid #FED7AA; border-radius: 14px;
+    padding: 24px; font-size: 0.875rem; line-height: 1.75; color: #1C1917;
+    white-space: pre-wrap; max-height: 600px; overflow-y: auto;
+  }
+  .result-box h2, .result-box h3 { font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #EA580C; margin: 16px 0 8px; }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: inline-block; width: 20px; height: 20px;
+    border: 2.5px solid rgba(255,255,255,0.4);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #F5F5F4; }
+  ::-webkit-scrollbar-thumb { background: #D6D3D1; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #A8A29E; }
+
+  /* section header line */
+  .sec-line { width: 4px; height: 22px; border-radius: 2px;
+              background: linear-gradient(180deg, #F97316, #FB923C); flex-shrink: 0; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ═══════════ TOP BAR ═══════════ -->
+<header class="top-bar fixed top-0 left-0 right-0 h-16 z-50 flex items-center justify-between px-6 lg:px-10">
+  <div class="flex items-center gap-3">
+    <a href="/" class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-ox transition-colors">
+      <span class="material-symbols-outlined text-base" style="font-size:1rem;">arrow_back</span>
+      HR Room
+    </a>
+    <span class="text-gray-200">|</span>
+    <div class="flex items-center gap-2">
+      <span class="w-7 h-7 rounded-lg flex items-center justify-center text-white text-sm font-bold"
+            style="background: linear-gradient(135deg,#a14000,#FF6900);">X</span>
+      <h2 class="text-base font-extrabold text-gray-900 font-headline tracking-tight">HR X</h2>
+    </div>
+    <span class="hidden sm:inline text-xs font-semibold text-ox bg-ox-light border border-ox-border px-3 py-1 rounded-full">
+      ✦ Agentic Platform
+    </span>
+  </div>
+  <div class="flex items-center gap-2">
+    <span id="hrx-api-badge" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">연결 확인 중…</span>
+  </div>
+</header>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main class="pt-16 min-h-screen">
+
+  <!-- ── Hero ── -->
+  <section class="relative py-14 px-6 text-center overflow-hidden"
+           style="background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 45%, #FEF3C7 80%, #FFF7ED 100%);">
+    <div class="absolute top-0 right-0 w-72 h-72 rounded-full opacity-20 pointer-events-none"
+         style="background: radial-gradient(circle, #FB923C, transparent); transform: translate(30%, -30%);"></div>
+    <div class="max-w-2xl mx-auto relative z-10">
+      <span class="inline-flex items-center gap-2 bg-white border border-ox-border rounded-full px-4 py-1.5 text-xs font-bold text-ox uppercase tracking-wider mb-5">
+        <span class="w-2 h-2 rounded-full bg-ox animate-pulse"></span>
+        HR X Agentic Platform
+      </span>
+      <h1 class="text-4xl font-extrabold text-gray-900 font-headline tracking-tight leading-tight mb-3">
+        HR <span style="background:linear-gradient(135deg,#C2410C,#F97316,#FB923C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Intelligent</span> Tools
+      </h1>
+      <p class="text-base text-amber-800 opacity-80">Feedback Vocabulary · 연봉 Analytics · Global HR Pool</p>
+    </div>
+  </section>
+
+  <!-- ── Tab Bar ── -->
+  <div class="sticky top-16 z-40 bg-white/90 backdrop-blur-xl border-b border-gray-100">
+    <div class="max-w-6xl mx-auto px-6 py-3 flex gap-2 overflow-x-auto">
+      <button class="tab-btn active" data-tab="vocab" onclick="switchTab('vocab')">
+        💬 Feedback Vocabulary
+      </button>
+      <button class="tab-btn" data-tab="analytics" onclick="switchTab('analytics')">
+        📊 연봉 Analytics
+      </button>
+      <button class="tab-btn" data-tab="global" onclick="switchTab('global')">
+        🌏 Global HR Pool
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-6 py-8">
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- TAB 1: FEEDBACK VOCABULARY                           -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <section id="tab-vocab" class="tab-section">
+      <div class="flex items-start gap-3 mb-6">
+        <div class="sec-line mt-1"></div>
+        <div>
+          <h2 class="text-xl font-bold text-gray-900">💬 Feedback Vocabulary</h2>
+          <p class="text-sm text-gray-400 mt-0.5">Claude AI가 직원 유형 × 코칭 상황별 풍부한 표현 Pool을 생성합니다</p>
+        </div>
+      </div>
+
+      <div class="feat-card mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="ox-label">직원 유형</label>
+            <select id="voc-emp-type" class="ox-select">
+              <option>고성과자</option>
+              <option>승진후보형</option>
+              <option>전문핵심형</option>
+              <option>성장형</option>
+              <option>저성과자</option>
+              <option>갈등유발형</option>
+            </select>
+          </div>
+          <div>
+            <label class="ox-label">코칭 상황</label>
+            <select id="voc-scenario" class="ox-select">
+              <option>강점 칭찬</option>
+              <option>성장 코칭</option>
+              <option>성과 개선</option>
+              <option>역할 확장</option>
+              <option>경고</option>
+              <option>동기부여</option>
+            </select>
+          </div>
+          <div>
+            <label class="ox-label">커뮤니케이션 톤</label>
+            <select id="voc-tone" class="ox-select">
+              <option>코칭형</option>
+              <option>공식적</option>
+              <option>직설형</option>
+              <option>공감형</option>
+            </select>
+          </div>
+          <div>
+            <label class="ox-label">추가 맥락 (선택)</label>
+            <input id="voc-context" class="ox-input" type="text"
+              placeholder="예: 이번 분기 핵심 프로젝트 마감 직전 위기 돌파 상황"/>
+          </div>
+        </div>
+        <div class="mt-5">
+          <button id="voc-btn" class="grad-btn w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+                  onclick="generateVocab()">
+            <span class="material-symbols-outlined text-base" style="font-size:1.1rem;">auto_awesome</span>
+            Claude AI — Vocabulary Pool 생성
+          </button>
+        </div>
+      </div>
+
+      <div id="voc-result" class="hidden">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="sec-line"></div>
+          <span class="text-sm font-bold text-gray-700">생성 결과</span>
+          <span class="text-xs text-gray-400">생성된 표현은 의사결정 보조용이며 관리자 검토 후 확정하세요</span>
+        </div>
+        <div id="voc-output" class="result-box"></div>
+      </div>
+
+      <div id="voc-fallback" class="hidden mt-4">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="sec-line"></div>
+          <span class="text-sm font-bold text-gray-700">기본 예시 Pool</span>
+        </div>
+        <div id="voc-fallback-content" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <p class="text-xs text-gray-400 mt-3 text-center">
+          ※ Anthropic API 키가 연결되면 Claude가 훨씬 풍부한 Pool을 생성합니다
+        </p>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- TAB 2: HR ANALYTICS                                   -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <section id="tab-analytics" class="tab-section hidden">
+      <div class="flex items-start gap-3 mb-6">
+        <div class="sec-line mt-1"></div>
+        <div>
+          <h2 class="text-xl font-bold text-gray-900">📊 연봉 리뷰 & 인사이트</h2>
+          <p class="text-sm text-gray-400 mt-0.5">피드백 감정분석 × 연봉 상관관계 · 팀별/개인별 AI 인사이트</p>
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div id="analytics-kpi" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="metric-card">
+          <div class="metric-val" id="kpi-total">—</div>
+          <div class="metric-label">총 직원 수</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="kpi-avg-salary">—</div>
+          <div class="metric-label">평균 연봉 (26년)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="kpi-avg-raise">—</div>
+          <div class="metric-label">평균 인상률 (26년)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="kpi-corr">—</div>
+          <div class="metric-label">피드백-인상률 상관계수</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="feat-card">
+          <h3 class="text-sm font-bold text-gray-700 mb-4">피드백 감정 점수 × 연봉 인상률</h3>
+          <canvas id="chart-scatter" height="260"></canvas>
+        </div>
+        <div class="feat-card">
+          <h3 class="text-sm font-bold text-gray-700 mb-4">팀별 평균 인상률</h3>
+          <canvas id="chart-bar" height="260"></canvas>
+        </div>
+      </div>
+
+      <div class="feat-card mb-6">
+        <h3 class="text-sm font-bold text-gray-700 mb-4">3개년 연봉 추이 (팀 평균)</h3>
+        <canvas id="chart-line" height="200"></canvas>
+      </div>
+
+      <!-- Team Table -->
+      <div class="feat-card">
+        <h3 class="text-sm font-bold text-gray-700 mb-4">팀별 핵심 지표 요약</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" id="team-table">
+            <thead>
+              <tr class="border-b border-gray-100">
+                <th class="text-left py-2 px-3 text-xs font-bold text-gray-500">팀</th>
+                <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">인원</th>
+                <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">평균 연봉</th>
+                <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">인상률</th>
+                <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">피드백 점수</th>
+              </tr>
+            </thead>
+            <tbody id="team-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- TAB 3: GLOBAL HR POOL                                 -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <section id="tab-global" class="tab-section hidden">
+      <div class="flex items-start gap-3 mb-6">
+        <div class="sec-line mt-1"></div>
+        <div>
+          <h2 class="text-xl font-bold text-gray-900">🌏 Global HR 인재 Pool</h2>
+          <p class="text-sm text-gray-400 mt-0.5">베트남 20명 · 아부다비 10명 · 미국 5명(AI) · 인도네시아 10명 — 스킬 매칭 + 프로젝트 추천</p>
+        </div>
+      </div>
+
+      <!-- Project Selector -->
+      <div class="feat-card mb-6">
+        <h3 class="text-sm font-bold text-gray-700 mb-4">🎯 프로젝트 매칭</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div class="md:col-span-2">
+            <label class="ox-label">프로젝트 선택</label>
+            <select id="global-proj" class="ox-select" onchange="runMatch()">
+              <option value="0">글로벌 이커머스 플랫폼 구축 (React, Node.js, PostgreSQL, Docker)</option>
+              <option value="1">모바일 뱅킹 앱 iOS/Android (Flutter, Dart, Firebase)</option>
+              <option value="2">AI 챗봇 & LLM 통합 플랫폼 (Python, LangChain, FastAPI)</option>
+              <option value="3">클라우드 마이그레이션 & DevOps (AWS, Docker, Kubernetes)</option>
+              <option value="4">데이터 플랫폼 & BI 분석 (Python, SQL, Spark, Power BI)</option>
+              <option value="5">핀테크 결제 시스템 고도화 (Java, Spring Boot, Payment Gateway)</option>
+            </select>
+          </div>
+          <div>
+            <label class="ox-label">지역 필터</label>
+            <select id="global-region" class="ox-select" onchange="runMatch()">
+              <option value="">전체 지역</option>
+              <option value="Vietnam">베트남</option>
+              <option value="UAE">아부다비 (UAE)</option>
+              <option value="USA">미국</option>
+              <option value="Indonesia">인도네시아</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Project Info Pills -->
+        <div id="proj-info" class="flex flex-wrap gap-2 mt-1"></div>
+      </div>
+
+      <!-- Match Results -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="sec-line"></div>
+            <span class="text-sm font-bold text-gray-700">추천 인재 (Fit Score 순)</span>
+          </div>
+          <span id="match-count" class="text-xs text-gray-400"></span>
+        </div>
+        <div id="match-results" class="dev-row"></div>
+      </div>
+
+      <!-- Full Pool Stats -->
+      <div class="feat-card">
+        <h3 class="text-sm font-bold text-gray-700 mb-4">📌 Pool 전체 현황</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div class="metric-card text-center">
+            <div class="metric-val">45</div>
+            <div class="metric-label">총 인원</div>
+          </div>
+          <div class="metric-card text-center">
+            <div class="metric-val">4</div>
+            <div class="metric-label">국가/지역</div>
+          </div>
+          <div class="metric-card text-center">
+            <div class="metric-val">6</div>
+            <div class="metric-label">전문 역할군</div>
+          </div>
+          <div class="metric-card text-center">
+            <div class="metric-val">$18-65</div>
+            <div class="metric-label">시급 범위 (USD)</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="p-3 rounded-xl text-center" style="background:#F0FDF4; border:1px solid #BBF7D0;">
+            <div class="font-bold text-green-700 text-lg">20명</div>
+            <div class="text-xs text-green-600">🇻🇳 베트남</div>
+          </div>
+          <div class="p-3 rounded-xl text-center" style="background:#FFF7ED; border:1px solid #FED7AA;">
+            <div class="font-bold text-orange-700 text-lg">10명</div>
+            <div class="text-xs text-orange-600">🇦🇪 아부다비</div>
+          </div>
+          <div class="p-3 rounded-xl text-center" style="background:#EFF6FF; border:1px solid #BFDBFE;">
+            <div class="font-bold text-blue-700 text-lg">5명</div>
+            <div class="text-xs text-blue-600">🇺🇸 미국 (AI전문)</div>
+          </div>
+          <div class="p-3 rounded-xl text-center" style="background:#FDF4FF; border:1px solid #E9D5FF;">
+            <div class="font-bold text-purple-700 text-lg">10명</div>
+            <div class="text-xs text-purple-600">🇮🇩 인도네시아</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /max-w-6xl -->
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.remove('hidden');
+  document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+  if (tab === 'analytics' && !analyticsLoaded) loadAnalytics();
+  if (tab === 'global' && !globalLoaded) { globalLoaded = true; runMatch(); }
+}
+
+// ═══════════════════════════════════════════════════════
+// API health
+// ═══════════════════════════════════════════════════════
+async function checkHealth() {
+  try {
+    const r = await fetch('/api/health');
+    const d = await r.json();
+    const badge = document.getElementById('hrx-api-badge');
+    if (d.ok && d.anthropic_configured) {
+      badge.className = 'text-xs font-semibold px-3 py-1.5 rounded-full bg-green-50 text-green-700 border border-green-200';
+      badge.textContent = '✓ Claude 연결됨';
+    } else {
+      badge.className = 'text-xs font-semibold px-3 py-1.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200';
+      badge.textContent = 'API 키 미설정';
+    }
+  } catch(e) {}
+}
+checkHealth();
+
+// ═══════════════════════════════════════════════════════
+// FEEDBACK VOCABULARY
+// ═══════════════════════════════════════════════════════
+async function generateVocab() {
+  const btn = document.getElementById('voc-btn');
+  const empType = document.getElementById('voc-emp-type').value;
+  const scenario = document.getElementById('voc-scenario').value;
+  const tone = document.getElementById('voc-tone').value;
+  const context = document.getElementById('voc-context').value;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Claude가 생성 중…';
+  document.getElementById('voc-result').classList.add('hidden');
+  document.getElementById('voc-fallback').classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/hrx/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emp_type: empType, scenario, tone, context })
+    });
+    const data = await res.json();
+    if (data.result) {
+      const out = document.getElementById('voc-output');
+      out.innerHTML = renderMarkdown(data.result);
+      document.getElementById('voc-result').classList.remove('hidden');
+    } else {
+      showFallbackVocab(empType, scenario, tone);
+    }
+  } catch(e) {
+    showFallbackVocab(empType, scenario, tone);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span class="material-symbols-outlined text-base" style="font-size:1.1rem;">auto_awesome</span> Claude AI — Vocabulary Pool 생성';
+}
+
+function renderMarkdown(text) {
+  // simple markdown render
+  return text
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^\*\*(.+)\*\*$/gm, '<strong>$1</strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^- (.+)$/gm, '<li style="margin-left:16px;list-style:disc;">$1</li>')
+    .replace(/\n{2,}/g, '<br/><br/>');
+}
+
+function showFallbackVocab(empType, scenario, tone) {
+  const sections = {
+    '핵심 코칭 표현': [
+      '이번 분기 결과가 팀 전체에 실질적인 영향을 미쳤습니다.',
+      '당신의 접근 방식은 우리가 기대한 수준을 명확히 초과했습니다.',
+      '구체적인 실행력이 결과로 이어진 좋은 사례입니다.',
+      '이 강점을 다음 분기에 어떻게 확장할 수 있을지 함께 생각해봅시다.',
+    ],
+    '금기 표현': [
+      '"항상" / "절대" — 과도한 일반화는 방어적 반응을 유발합니다.',
+      '"왜 그렇게 했어요?" — 비난처럼 들릴 수 있습니다.',
+      '"당연히 해야 하는 일인데" — 동기를 크게 저하시킵니다.',
+    ],
+    '대화 오프닝': [
+      '오늘 시간 내 주셔서 감사합니다. 이번 분기 관련해 꼭 이야기 나누고 싶었습니다.',
+      '이번 분기 결과를 보면서 제가 꼭 전달드리고 싶은 내용이 있었습니다.',
+    ],
+    '코칭 질문': [
+      '이번 성과를 만들어 낸 핵심 요인이 무엇이라고 생각하시나요?',
+      '다음 분기에 가장 집중하고 싶은 영역은 어디인가요?',
+      '이 경험에서 가장 성장했다고 느낀 순간은 언제였나요?',
+    ],
+  };
+
+  let html = '';
+  for (const [sec, items] of Object.entries(sections)) {
+    html += `
+      <div class="feat-card">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-ox text-lg">📌</span>
+          <span class="font-bold text-gray-800 text-sm">${sec}</span>
+        </div>
+        <ul class="space-y-2">
+          ${items.map(i => `<li class="text-sm text-gray-600 flex gap-2"><span class="text-ox mt-0.5">·</span><span>${i}</span></li>`).join('')}
+        </ul>
+      </div>`;
+  }
+  document.getElementById('voc-fallback-content').innerHTML = html;
+  document.getElementById('voc-fallback').classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════
+// HR ANALYTICS  (Chart.js — embedded sample data)
+// ═══════════════════════════════════════════════════════
+let analyticsLoaded = false;
+
+// Sample data representative of the Excel structure
+const ANALYTICS_DATA = {
+  teams: ['개발팀', '인사팀', '마케팅팀', '재무팀', '영업팀', '운영팀'],
+  teamData: [
+    { team:'개발팀',   count:18, avg2024:62000000, avg2025:65000000, avg2026:68500000, raise26:5.38, fbScore:42.3, fbSpec:58.1 },
+    { team:'인사팀',   count:12, avg2024:55000000, avg2025:57000000, avg2026:60000000, raise26:5.26, fbScore:38.7, fbSpec:52.4 },
+    { team:'마케팅팀', count:14, avg2024:58000000, avg2025:60500000, avg2026:63000000, raise26:4.13, fbScore:29.5, fbSpec:44.8 },
+    { team:'재무팀',   count:10, avg2024:64000000, avg2025:67000000, avg2026:70200000, raise26:4.78, fbScore:35.2, fbSpec:49.6 },
+    { team:'영업팀',   count:16, avg2024:52000000, avg2025:54500000, avg2026:58000000, raise26:6.42, fbScore:48.1, fbSpec:62.3 },
+    { team:'운영팀',   count:12, avg2024:50000000, avg2025:52000000, avg2026:54500000, raise26:4.81, fbScore:32.4, fbSpec:46.7 },
+  ],
+  // scatter: [fbScore, raise26] per employee (sample 40 pts)
+  scatter: [
+    [52,6.8],[44,5.9],[38,5.1],[61,7.3],[29,4.2],[48,6.1],[35,4.8],[55,6.9],
+    [40,5.3],[65,7.8],[22,3.5],[30,4.4],[58,7.0],[47,6.0],[33,4.5],[70,8.2],
+    [25,3.8],[42,5.6],[68,7.9],[37,4.9],[50,6.3],[28,4.0],[60,7.2],[45,5.8],
+    [32,4.6],[55,6.7],[20,3.2],[48,6.2],[63,7.5],[36,4.8],[40,5.4],[53,6.6],
+    [26,3.9],[44,5.7],[67,7.8],[31,4.3],[57,6.8],[23,3.6],[49,6.1],[62,7.4],
+  ],
+};
+
+function loadAnalytics() {
+  analyticsLoaded = true;
+  const d = ANALYTICS_DATA;
+  const total = d.teamData.reduce((s,t) => s + t.count, 0);
+  const avgSalary = d.teamData.reduce((s,t) => s + t.avg2026 * t.count, 0) / total;
+  const avgRaise = d.teamData.reduce((s,t) => s + t.raise26 * t.count, 0) / total;
+
+  // Pearson corr of scatter
+  const xs = d.scatter.map(p => p[0]), ys = d.scatter.map(p => p[1]);
+  const mx = xs.reduce((a,b)=>a+b)/xs.length, my = ys.reduce((a,b)=>a+b)/ys.length;
+  const num = xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my), 0);
+  const den = Math.sqrt(xs.reduce((s,x)=>s+(x-mx)**2,0)) * Math.sqrt(ys.reduce((s,y)=>s+(y-my)**2,0));
+  const corr = (num/den).toFixed(3);
+
+  document.getElementById('kpi-total').textContent = total + '명';
+  document.getElementById('kpi-avg-salary').textContent = (avgSalary/1e7).toFixed(1) + '천만원';
+  document.getElementById('kpi-avg-raise').textContent = avgRaise.toFixed(2) + '%';
+  document.getElementById('kpi-corr').textContent = corr;
+
+  const colors = ['#F97316','#EA580C','#FB923C','#FDBA74','#C2410C','#FED7AA'];
+
+  // Scatter chart
+  new Chart(document.getElementById('chart-scatter'), {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: '직원별 데이터',
+        data: d.scatter.map(p=>({x:p[0],y:p[1]})),
+        backgroundColor: 'rgba(249,115,22,0.55)',
+        pointRadius: 6,
+        pointHoverRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display:false }, tooltip: {
+        callbacks: { label: ctx => `피드백:${ctx.parsed.x} / 인상률:${ctx.parsed.y}%` }
+      }},
+      scales: {
+        x: { title: { display:true, text:'피드백 감정 점수', font:{size:11} } },
+        y: { title: { display:true, text:'26년 인상률 (%)', font:{size:11} } }
+      }
+    }
+  });
+
+  // Bar chart
+  new Chart(document.getElementById('chart-bar'), {
+    type: 'bar',
+    data: {
+      labels: d.teamData.map(t=>t.team),
+      datasets: [{
+        label: '평균 인상률 (%)',
+        data: d.teamData.map(t=>t.raise26),
+        backgroundColor: colors,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display:false } },
+      scales: { y: { title: { display:true, text:'인상률 (%)' } } }
+    }
+  });
+
+  // Line chart (3-year trend)
+  new Chart(document.getElementById('chart-line'), {
+    type: 'line',
+    data: {
+      labels: ['2024년', '2025년', '2026년'],
+      datasets: d.teamData.map((t,i) => ({
+        label: t.team,
+        data: [t.avg2024/1e6, t.avg2025/1e6, t.avg2026/1e6],
+        borderColor: colors[i],
+        backgroundColor: colors[i] + '22',
+        tension: 0.35,
+        pointRadius: 4,
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position:'bottom', labels: { boxWidth:12, font:{size:11} } } },
+      scales: { y: { title: { display:true, text:'평균 연봉 (백만원)' } } }
+    }
+  });
+
+  // Table
+  const tbody = document.getElementById('team-table-body');
+  tbody.innerHTML = d.teamData.map(t => `
+    <tr class="border-b border-gray-50 hover:bg-orange-50 transition-colors">
+      <td class="py-2.5 px-3 font-semibold text-gray-800">${t.team}</td>
+      <td class="py-2.5 px-3 text-right text-gray-600">${t.count}명</td>
+      <td class="py-2.5 px-3 text-right text-gray-600">${(t.avg2026/1e7).toFixed(1)}천만원</td>
+      <td class="py-2.5 px-3 text-right font-semibold text-ox">${t.raise26.toFixed(2)}%</td>
+      <td class="py-2.5 px-3 text-right text-gray-600">${t.fbScore.toFixed(1)}점</td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// GLOBAL HR POOL
+// ═══════════════════════════════════════════════════════
+let globalLoaded = false;
+const ENG_RANK = { 'A2':1, 'B1':2, 'B2':3, 'C1':4, 'Native':5 };
+
+const PROJECTS = [
+  { id:0, required:['React','Node.js','PostgreSQL','Docker'],    preferred:['TypeScript','Redis','AWS','Microservices'], start_weeks:2, needs_lead:true,  min_eng:'B1', type:'Web',    months:6 },
+  { id:1, required:['Flutter','Dart','Firebase','REST API'],     preferred:['Payment Gateway','Security','Kotlin'],      start_weeks:4, needs_lead:true,  min_eng:'B1', type:'Mobile', months:5 },
+  { id:2, required:['Python','LangChain','OpenAI API','FastAPI'],preferred:['RAG','Docker','PostgreSQL','MLOps'],        start_weeks:1, needs_lead:true,  min_eng:'B2', type:'AI/ML',  months:4 },
+  { id:3, required:['AWS','Docker','Kubernetes','Terraform'],    preferred:['CI/CD','Python','Security'],               start_weeks:3, needs_lead:false, min_eng:'B1', type:'DevOps', months:3 },
+  { id:4, required:['Python','SQL','Spark','Power BI'],          preferred:['Airflow','BigQuery','Azure','PostgreSQL'],  start_weeks:6, needs_lead:true,  min_eng:'B2', type:'Data',   months:5 },
+  { id:5, required:['Java','Spring Boot','Payment Gateway','MySQL'], preferred:['PCI-DSS','SWIFT','Security','Oracle'], start_weeks:4, needs_lead:true,  min_eng:'B2', type:'Fintech',months:6 },
+];
+
+const DEVS = [
+  // Vietnam (VN001–VN020)
+  { id:'VN001', name:'Nguyen Van An',   region:'Vietnam',   role:'Fullstack Dev',     yrs:5, skills:['React','Node.js','PostgreSQL','Docker','TypeScript'], eng:'B2', avail:1, lead:true,  rate:28, spec:'Fullstack' },
+  { id:'VN002', name:'Tran Thi Bich',   region:'Vietnam',   role:'Frontend Dev',      yrs:3, skills:['React','Vue.js','TypeScript','CSS','Figma'],          eng:'B1', avail:0, lead:false, rate:20, spec:'Frontend' },
+  { id:'VN003', name:'Le Van Cuong',    region:'Vietnam',   role:'Backend Dev',       yrs:6, skills:['Node.js','PostgreSQL','Redis','AWS','Docker'],        eng:'B2', avail:2, lead:true,  rate:30, spec:'Backend' },
+  { id:'VN004', name:'Pham Thi Dung',   region:'Vietnam',   role:'Mobile Dev',        yrs:4, skills:['Flutter','Dart','Firebase','REST API'],               eng:'B1', avail:0, lead:false, rate:22, spec:'Mobile' },
+  { id:'VN005', name:'Hoang Van Em',    region:'Vietnam',   role:'DevOps Engineer',   yrs:5, skills:['AWS','Docker','Kubernetes','Terraform','CI/CD'],      eng:'B2', avail:1, lead:true,  rate:32, spec:'DevOps' },
+  { id:'VN006', name:'Vu Thi Phuong',   region:'Vietnam',   role:'Data Engineer',     yrs:4, skills:['Python','SQL','Spark','Airflow','Power BI'],          eng:'B1', avail:3, lead:false, rate:24, spec:'Data' },
+  { id:'VN007', name:'Dao Van Giang',   region:'Vietnam',   role:'Fullstack Dev',     yrs:7, skills:['React','Node.js','MySQL','Docker','Redis'],           eng:'B2', avail:0, lead:true,  rate:35, spec:'Fullstack' },
+  { id:'VN008', name:'Bui Thi Huong',   region:'Vietnam',   role:'ML Engineer',       yrs:3, skills:['Python','TensorFlow','FastAPI','Docker'],             eng:'B1', avail:2, lead:false, rate:25, spec:'AI/ML' },
+  { id:'VN009', name:'Ngo Van Ien',     region:'Vietnam',   role:'Backend Dev',       yrs:5, skills:['Java','Spring Boot','MySQL','PostgreSQL'],            eng:'B1', avail:1, lead:false, rate:26, spec:'Backend' },
+  { id:'VN010', name:'Do Thi Kim',      region:'Vietnam',   role:'Frontend Dev',      yrs:2, skills:['React','JavaScript','CSS','HTML'],                   eng:'A2', avail:0, lead:false, rate:18, spec:'Frontend' },
+  { id:'VN011', name:'Dinh Van Lam',    region:'Vietnam',   role:'DevOps Engineer',   yrs:6, skills:['AWS','Kubernetes','Terraform','Python','Security'],   eng:'B2', avail:2, lead:true,  rate:33, spec:'DevOps' },
+  { id:'VN012', name:'Mai Thi Mai',     region:'Vietnam',   role:'Data Analyst',      yrs:3, skills:['Python','SQL','Power BI','Tableau','Excel'],         eng:'B1', avail:0, lead:false, rate:20, spec:'Data' },
+  { id:'VN013', name:'Ly Van Nam',      region:'Vietnam',   role:'Fullstack Dev',     yrs:4, skills:['Vue.js','Node.js','MongoDB','Docker'],               eng:'B1', avail:1, lead:false, rate:22, spec:'Fullstack' },
+  { id:'VN014', name:'Trinh Thi Oanh', region:'Vietnam',   role:'Mobile Dev',        yrs:5, skills:['Flutter','Dart','Firebase','Payment Gateway','Kotlin'],eng:'B2',avail:3, lead:true,  rate:28, spec:'Mobile' },
+  { id:'VN015', name:'Dang Van Phuc',   region:'Vietnam',   role:'Backend Dev',       yrs:8, skills:['Node.js','PostgreSQL','Redis','AWS','Microservices'], eng:'C1', avail:4, lead:true,  rate:38, spec:'Backend' },
+  { id:'VN016', name:'Nguyen Thi Quynh',region:'Vietnam',  role:'ML Engineer',       yrs:4, skills:['Python','LangChain','FastAPI','RAG','OpenAI API'],    eng:'B2', avail:0, lead:false, rate:27, spec:'AI/ML' },
+  { id:'VN017', name:'Phan Van Rong',   region:'Vietnam',   role:'Data Engineer',     yrs:5, skills:['Python','SQL','BigQuery','Azure','PostgreSQL'],       eng:'B1', avail:2, lead:false, rate:25, spec:'Data' },
+  { id:'VN018', name:'Ha Thi Son',      region:'Vietnam',   role:'Fullstack Dev',     yrs:3, skills:['React','TypeScript','PostgreSQL','Docker'],           eng:'B1', avail:1, lead:false, rate:21, spec:'Fullstack' },
+  { id:'VN019', name:'Chu Van Tam',     region:'Vietnam',   role:'DevOps Engineer',   yrs:7, skills:['AWS','Docker','Kubernetes','Terraform','CI/CD','Security'],eng:'B2',avail:1,lead:true,rate:36,spec:'DevOps'},
+  { id:'VN020', name:'Duong Thi Uyen',  region:'Vietnam',   role:'Frontend Dev',      yrs:4, skills:['React','Vue.js','TypeScript','Figma','CSS'],          eng:'B1', avail:0, lead:false, rate:23, spec:'Frontend' },
+  // UAE (AD001–AD010)
+  { id:'AD001', name:'Omar Al Rashid',     region:'UAE', role:'Senior Fullstack',   yrs:9, skills:['React','Node.js','PostgreSQL','Docker','AWS','Redis'],  eng:'Native',avail:2, lead:true,  rate:55, spec:'Fullstack' },
+  { id:'AD002', name:'Fatima Al Mansoori', region:'UAE', role:'Data Engineer',      yrs:6, skills:['Python','SQL','BigQuery','Azure','Power BI','Spark'],   eng:'C1',  avail:0, lead:false, rate:42, spec:'Data' },
+  { id:'AD003', name:'Ahmed Al Dhaheri',   region:'UAE', role:'DevOps Lead',        yrs:8, skills:['AWS','Kubernetes','Terraform','Docker','CI/CD','Security'],eng:'Native',avail:3,lead:true,rate:58,spec:'DevOps'},
+  { id:'AD004', name:'Layla Al Mazrouei',  region:'UAE', role:'ML Engineer',        yrs:5, skills:['Python','TensorFlow','FastAPI','MLOps','Docker'],       eng:'C1',  avail:1, lead:false, rate:45, spec:'AI/ML' },
+  { id:'AD005', name:'Khalid Al Hamdan',   region:'UAE', role:'Fintech Dev',        yrs:7, skills:['Java','Spring Boot','Payment Gateway','MySQL','SWIFT','PCI-DSS'],eng:'Native',avail:2,lead:true,rate:60,spec:'Fintech'},
+  { id:'AD006', name:'Sara Al Nuaimi',     region:'UAE', role:'Mobile Dev',         yrs:4, skills:['Flutter','Dart','Firebase','REST API','Payment Gateway'],eng:'C1', avail:0, lead:false, rate:38, spec:'Mobile' },
+  { id:'AD007', name:'Yousef Al Kaabi',    region:'UAE', role:'Backend Dev',        yrs:6, skills:['Node.js','PostgreSQL','Redis','AWS','Microservices'],   eng:'Native',avail:4,lead:true,rate:50,spec:'Backend'},
+  { id:'AD008', name:'Mariam Al Suwaidi',  region:'UAE', role:'Frontend Dev',       yrs:3, skills:['React','TypeScript','CSS','Figma'],                    eng:'B2',  avail:0, lead:false, rate:32, spec:'Frontend' },
+  { id:'AD009', name:'Hamad Al Qubaisi',   region:'UAE', role:'Senior Data Eng',    yrs:8, skills:['Python','SQL','Spark','Airflow','BigQuery','MLOps'],    eng:'C1',  avail:2, lead:true,  rate:52, spec:'Data' },
+  { id:'AD010', name:'Noora Al Romaithi',  region:'UAE', role:'Fullstack Dev',      yrs:5, skills:['React','Node.js','MySQL','Docker','TypeScript'],        eng:'Native',avail:1,lead:false,rate:44,spec:'Fullstack'},
+  // USA (US001–US005)
+  { id:'US001', name:'Alex Johnson',    region:'USA', role:'AI Research Eng',    yrs:7, skills:['Python','LangChain','OpenAI API','RAG','FastAPI','MLOps','Docker'],eng:'Native',avail:2,lead:true, rate:65,spec:'AI/ML' },
+  { id:'US002', name:'Sarah Kim',       region:'USA', role:'ML Platform Eng',    yrs:5, skills:['Python','TensorFlow','FastAPI','Kubernetes','MLOps'],    eng:'Native',avail:1,lead:false,rate:60,spec:'AI/ML' },
+  { id:'US003', name:'Marcus Williams', region:'USA', role:'AI Solutions Arch',  yrs:10,skills:['Python','LangChain','OpenAI API','AWS','RAG','Docker','PostgreSQL'],eng:'Native',avail:4,lead:true,rate:68,spec:'AI/ML'},
+  { id:'US004', name:'Emily Chen',      region:'USA', role:'Data Scientist',     yrs:6, skills:['Python','SQL','BigQuery','Power BI','Spark','Airflow'],   eng:'Native',avail:0,lead:false,rate:58,spec:'Data' },
+  { id:'US005', name:'James Brown',     region:'USA', role:'LLM Engineer',       yrs:4, skills:['Python','LangChain','FastAPI','RAG','OpenAI API'],        eng:'Native',avail:1,lead:false,rate:55,spec:'AI/ML' },
+  // Indonesia (ID001–ID010)
+  { id:'ID001', name:'Budi Santoso',    region:'Indonesia', role:'Fullstack Dev',  yrs:6, skills:['React','Node.js','PostgreSQL','Docker','TypeScript'],   eng:'B1', avail:0, lead:true,  rate:25, spec:'Fullstack' },
+  { id:'ID002', name:'Siti Rahayu',     region:'Indonesia', role:'Backend Dev',    yrs:4, skills:['Java','Spring Boot','MySQL','PostgreSQL'],              eng:'B1', avail:1, lead:false, rate:20, spec:'Backend' },
+  { id:'ID003', name:'Ahmad Fauzi',     region:'Indonesia', role:'DevOps Engineer',yrs:5, skills:['AWS','Docker','Kubernetes','Terraform','CI/CD'],        eng:'B2', avail:2, lead:true,  rate:28, spec:'DevOps' },
+  { id:'ID004', name:'Dewi Kurnia',     region:'Indonesia', role:'Data Engineer',  yrs:4, skills:['Python','SQL','Spark','Power BI','Airflow'],            eng:'B1', avail:0, lead:false, rate:22, spec:'Data' },
+  { id:'ID005', name:'Rizki Pratama',   region:'Indonesia', role:'Fintech Dev',    yrs:5, skills:['Java','Spring Boot','Payment Gateway','MySQL','Security'],eng:'B2',avail:1,lead:false,rate:26,spec:'Fintech'},
+  { id:'ID006', name:'Nurul Hidayah',   region:'Indonesia', role:'Frontend Dev',   yrs:3, skills:['React','Vue.js','TypeScript','CSS'],                   eng:'B1', avail:0, lead:false, rate:18, spec:'Frontend' },
+  { id:'ID007', name:'Hendra Gunawan',  region:'Indonesia', role:'ML Engineer',    yrs:4, skills:['Python','TensorFlow','FastAPI','Docker','MLOps'],       eng:'B2', avail:2, lead:false, rate:24, spec:'AI/ML' },
+  { id:'ID008', name:'Rina Wati',       region:'Indonesia', role:'Mobile Dev',     yrs:3, skills:['Flutter','Dart','Firebase','REST API'],                eng:'B1', avail:0, lead:false, rate:18, spec:'Mobile' },
+  { id:'ID009', name:'Eko Prasetyo',    region:'Indonesia', role:'Mobile Dev',     yrs:3, skills:['Flutter','Dart','Firebase','REST API','UI/UX'],        eng:'A2', avail:0, lead:false, rate:18, spec:'Mobile' },
+  { id:'ID010', name:'Indah Lestari',   region:'Indonesia', role:'Fullstack Dev',  yrs:7, skills:['React','Node.js','PostgreSQL','AWS','Docker'],          eng:'B2', avail:4, lead:true,  rate:32, spec:'Fullstack' },
+];
+
+const REGION_FLAG = { 'Vietnam':'🇻🇳', 'UAE':'🇦🇪', 'USA':'🇺🇸', 'Indonesia':'🇮🇩' };
+
+function scoreDev(dev, proj) {
+  const req = new Set(proj.required);
+  const pref = new Set(proj.preferred);
+  const devSkills = new Set(dev.skills);
+  const reqMatch = [...req].filter(s => devSkills.has(s)).length / Math.max(req.size, 1);
+  const prefMatch = [...pref].filter(s => devSkills.has(s)).length / Math.max(pref.size, 1);
+  const availScore = dev.avail <= proj.start_weeks ? 1.0 : Math.max(0.2, 1 - (dev.avail - proj.start_weeks) / 8);
+  const engScore = (ENG_RANK[dev.eng] || 0) >= (ENG_RANK[proj.min_eng] || 0) ? 1.0 : 0.5;
+  const leadScore = (!proj.needs_lead || dev.lead) ? 1.0 : 0.4;
+  const fit = Math.round((reqMatch*0.45 + prefMatch*0.20 + availScore*0.15 + engScore*0.10 + leadScore*0.10) * 100);
+  const risk = Math.round(100 - (availScore*35 + reqMatch*45 + engScore*20));
+  const reqMatchedSkills = [...req].filter(s => devSkills.has(s));
+  const prefMatchedSkills = [...pref].filter(s => devSkills.has(s));
+  return { ...dev, fit, risk, reqMatchedSkills, prefMatchedSkills, reqMatch: Math.round(reqMatch*100) };
+}
+
+function runMatch() {
+  const projIdx = parseInt(document.getElementById('global-proj').value);
+  const region = document.getElementById('global-region').value;
+  const proj = PROJECTS[projIdx];
+
+  // Update project info pills
+  const infoEl = document.getElementById('proj-info');
+  infoEl.innerHTML =
+    `<span class="skill-chip match">필수: ${proj.required.join(', ')}</span>` +
+    `<span class="skill-chip">우대: ${proj.preferred.join(', ')}</span>` +
+    `<span class="skill-chip">${proj.start_weeks}주 내 착수</span>` +
+    `<span class="skill-chip">${proj.needs_lead ? '리더 필요' : '리더 불필요'}</span>` +
+    `<span class="skill-chip">영어 ${proj.min_eng}+</span>`;
+
+  let devs = DEVS;
+  if (region) devs = devs.filter(d => d.region === region);
+
+  const scored = devs.map(d => scoreDev(d, proj)).sort((a,b) => b.fit - a.fit);
+
+  const container = document.getElementById('match-results');
+  document.getElementById('match-count').textContent = `${scored.length}명 중 상위 ${Math.min(10, scored.length)}명 표시`;
+
+  container.innerHTML = scored.slice(0, 10).map((d, i) => {
+    const fitColor = d.fit >= 70 ? '#16a34a' : d.fit >= 50 ? '#d97706' : '#dc2626';
+    const riskColor = d.risk <= 30 ? '#16a34a' : d.risk <= 60 ? '#d97706' : '#dc2626';
+    const badge = i === 0 ? '<span class="text-xs font-bold text-white px-2 py-0.5 rounded-full ml-1" style="background:#EA580C;">TOP</span>' :
+                  i < 3 ? `<span class="text-xs text-ox font-semibold ml-1">#${i+1}</span>` : '';
+    const allReqSkills = new Set(proj.required);
+    const skillChips = d.skills.slice(0,6).map(s =>
+      `<span class="skill-chip ${allReqSkills.has(s) ? 'match' : ''}">${s}</span>`).join('');
+    return `
+      <div class="dev-card">
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <div class="font-bold text-gray-900 text-sm">${REGION_FLAG[d.region] || ''} ${d.name} ${badge}</div>
+            <div class="text-xs text-gray-400 mt-0.5">${d.role} · ${d.yrs}년 · $${d.rate}/hr · 영어 ${d.eng}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-lg font-extrabold" style="color:${fitColor}">${d.fit}%</div>
+            <div class="text-xs text-gray-400">Fit Score</div>
+          </div>
+        </div>
+        <div class="mb-2">
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-gray-500">필수스킬 충족</span>
+            <span class="font-semibold" style="color:${fitColor}">${d.reqMatch}%</span>
+          </div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width:${d.reqMatch}%"></div></div>
+        </div>
+        <div class="flex flex-wrap gap-0.5 mb-2">${skillChips}</div>
+        <div class="flex justify-between text-xs text-gray-500 pt-2 border-t border-gray-50">
+          <span>투입가능: ${d.avail}주 후</span>
+          <span class="font-semibold" style="color:${riskColor}">리스크 ${d.risk}%</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Analytics loads on tab switch; Global HR loads immediately when visible
+  runMatch(); // pre-init data so first tab switch is instant
+  globalLoaded = true;
+});
+</script>
+</body>
+</html>

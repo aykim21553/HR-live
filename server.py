@@ -1727,6 +1727,53 @@ async def score_resumes(body: ScoreBatchBody):
     }
 
 
+# ── HR X: Feedback Vocabulary ─────────────────────────────────
+
+class HRXFeedbackRequest(BaseModel):
+    emp_type: str = Field(..., description="직원 유형 (예: 고성과자)")
+    scenario: str = Field(..., description="코칭 상황 (예: 강점 칭찬)")
+    tone: str = Field(..., description="커뮤니케이션 톤 (예: 코칭형)")
+    context: str = Field(default="", description="추가 맥락 (선택)")
+
+@app.post("/api/hrx/feedback")
+async def hrx_feedback(req: HRXFeedbackRequest):
+    """HR X — Claude AI Feedback Vocabulary Pool 생성"""
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY not configured")
+
+    prompt = f"""당신은 15년 경력의 조직개발 및 HR 코치 전문가입니다.
+
+아래 조건에 맞는 코칭 Vocabulary Pool을 매우 풍부하게 생성해 주세요.
+
+- 직원 유형: {req.emp_type}
+- 코칭 상황: {req.scenario}
+- 커뮤니케이션 톤: {req.tone}
+- 추가 맥락: {req.context or '(없음)'}
+
+다음 7개 섹션을 각각 충분히 풍부하게 작성해 주세요 (각 항목은 불릿으로 구분):
+
+## 1. 핵심 코칭 표현 (이 유형 및 상황에서 가장 효과적인 표현 12개 이상)
+## 2. 절대 금기 표현 (써선 안 되는 표현 7개 이상 — 이유와 함께)
+## 3. 대화 오프닝 (다양한 방식으로 시작하는 오프닝 6개 이상)
+## 4. 완성형 피드백 문장 예시 (구체적 맥락이 담긴 완전한 문장 8개 이상)
+## 5. 성찰 유도 코칭 질문 (열린 질문 형식 10개 이상)
+## 6. 마무리 표현 (동기부여 및 다음 행동 연결 6개 이상)
+## 7. 감정 인식 및 공감 표현 (7개 이상)
+
+모든 표현은 {req.emp_type} 유형의 특성을 깊이 반영해 주세요."""
+
+    try:
+        client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        msg = client.messages.create(
+            model=CHAT_MODEL,
+            max_tokens=3500,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return {"result": msg.content[0].text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ── 헬스체크 ──────────────────────────────────────────────────
 
 @app.get("/api/health")
