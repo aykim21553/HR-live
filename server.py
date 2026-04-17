@@ -1774,6 +1774,164 @@ async def hrx_feedback(req: HRXFeedbackRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ── HR X: Analytics (연봉 리뷰) ──────────────────────────────
+
+_HRX_EXCEL = ROOT / "data" / "hr_dummy_salary_review_completed_10types.xlsx"
+
+_POSITIVE_KW = ["훌륭","우수","탁월","기여","성과","완료","달성","향상","개선",
+                "리더십","주도","성장","발전","협력","소통","신뢰","책임","창의","혁신","효율",
+                "주도적","적극적","선도","완성도","안정적"]
+_NEGATIVE_KW = ["미흡","부족","지연","이슈","문제","아쉬움","부진","실수",
+                "오류","지체","혼선","갈등","불명확","소통부재","방어적","수동적",
+                "미달","불충분","재작업","위험"]
+
+def _hrx_sentiment(text: str) -> float:
+    if not isinstance(text, str) or text.strip() in ("", "nan", "None"):
+        return 0.0
+    pos = sum(1 for w in _POSITIVE_KW if w in text)
+    neg = sum(1 for w in _NEGATIVE_KW if w in text)
+    total = pos + neg
+    return round((pos - neg) / total * 100, 1) if total else 0.0
+
+def _hrx_specificity(text: str) -> float:
+    import re as _re
+    if not isinstance(text, str): return 0.0
+    nums = len(_re.findall(r"\d+", text))
+    pcts = len(_re.findall(r"\d+%", text))
+    return min(100.0, nums * 5 + pcts * 10 + len(text) / 12)
+
+@app.get("/api/hrx/analytics")
+def hrx_analytics():
+    """HR X — 실제 Excel 데이터 기반 연봉 Analytics"""
+    try:
+        import pandas as _pd
+        df = _pd.read_excel(_HRX_EXCEL, sheet_name="Sheet1")
+        rename = {
+            "구분": "team", "일련번호": "employee_id", "직급": "grade",
+            "26년 연봉": "salary_2026", "25년 연봉": "salary_2025", "24년 연봉": "salary_2024",
+            "26년 2분기 피드백": "fb_q2", "26년 3분기 피드백": "fb_q3", "26년 4분기 피드백": "fb_q4",
+        }
+        df = df.rename(columns=rename)
+        df["raise_26"] = (df["salary_2026"] - df["salary_2025"]) / df["salary_2025"] * 100
+        df["raise_25"] = (df["salary_2025"] - df["salary_2024"]) / df["salary_2024"] * 100
+        df["fb_score"] = df.apply(
+            lambda r: (_hrx_sentiment(str(r.fb_q2)) + _hrx_sentiment(str(r.fb_q3)) + _hrx_sentiment(str(r.fb_q4))) / 3,
+            axis=1,
+        )
+        df["fb_len"] = df.apply(
+            lambda r: (len(str(r.fb_q2)) + len(str(r.fb_q3)) + len(str(r.fb_q4))) / 3,
+            axis=1,
+        )
+        df["fb_spec"] = df.apply(
+            lambda r: (_hrx_specificity(str(r.fb_q2)) + _hrx_specificity(str(r.fb_q3)) + _hrx_specificity(str(r.fb_q4))) / 3,
+            axis=1,
+        )
+        # KPIs
+        total = len(df)
+        avg_salary = float(df["salary_2026"].mean())
+        avg_raise = float(df["raise_26"].mean())
+        corr = float(df[["fb_score", "raise_26"]].corr().iloc[0, 1])
+
+        # scatter points (all employees)
+        scatter = [{"x": round(float(r.fb_score), 1), "y": round(float(r.raise_26), 2),
+                    "team": str(r.team), "id": str(r.employee_id), "grade": str(r.grade)}
+                   for _, r in df.iterrows()]
+
+        # team aggregates
+        tg = df.groupby("team").agg(
+            count=("employee_id", "count"),
+            avg_salary_2024=("salary_2024", "mean"),
+            avg_salary_2025=("salary_2025", "mean"),
+            avg_salary_2026=("salary_2026", "mean"),
+            raise_26=("raise_26", "mean"),
+            raise_25=("raise_25", "mean"),
+            fb_score=("fb_score", "mean"),
+            fb_len=("fb_len", "mean"),
+            fb_spec=("fb_spec", "mean"),
+        ).reset_index().round(2)
+        teams = tg.to_dict(orient="records")
+
+        # per-employee (for individual tab)
+        employees = []
+        for _, r in df.iterrows():
+            employees.append({
+                "employee_id": str(r.employee_id), "team": str(r.team), "grade": str(r.grade),
+                "salary_2024": float(r.salary_2024), "salary_2025": float(r.salary_2025), "salary_2026": float(r.salary_2026),
+                "raise_26": round(float(r.raise_26), 2), "raise_25": round(float(r.raise_25), 2),
+                "fb_q2": str(r.fb_q2), "fb_q3": str(r.fb_q3), "fb_q4": str(r.fb_q4),
+                "fb_score": round(float(r.fb_score), 1),
+                "fb_len": round(float(r.fb_len), 1),
+                "fb_spec": round(float(r.fb_spec), 1),
+            })
+
+        return {
+            "ok": True, "total": total, "avg_salary": avg_salary,
+            "avg_raise": avg_raise, "corr": corr,
+            "scatter": scatter, "teams": teams, "employees": employees,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class HRXSalaryAIRequest(BaseModel):
+    employee_id: str
+    team: str
+    grade: str
+    salary_2024: float
+    salary_2025: float
+    salary_2026: float
+    raise_26: float
+    raise_25: float
+    fb_q2: str
+    fb_q3: str
+    fb_q4: str
+    fb_score: float
+    fb_len: float
+    fb_spec: float
+
+@app.post("/api/hrx/salary-ai")
+async def hrx_salary_ai(req: HRXSalaryAIRequest):
+    """HR X — Claude AI 개인 연봉 분석 (2027년 추천)"""
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY not configured")
+    prompt = f"""당신은 보상 및 성과 분석 전문 HR 컨설턴트입니다.
+
+아래 직원 데이터를 분석하고 2027년 연봉 적정 수준을 제안해 주세요.
+
+직원 정보
+- ID: {req.employee_id} / 팀: {req.team} / 직급: {req.grade}
+- 2024년 연봉: {req.salary_2024:,.0f}원
+- 2025년 연봉: {req.salary_2025:,.0f}원 (인상률 {req.raise_25:.1f}%)
+- 2026년 연봉: {req.salary_2026:,.0f}원 (인상률 {req.raise_26:.1f}%)
+
+분기별 피드백 원문
+- Q2: {req.fb_q2}
+- Q3: {req.fb_q3}
+- Q4: {req.fb_q4}
+
+자동 분석 값
+- 종합 감정 점수: {req.fb_score:.1f} / 피드백 평균 길이: {req.fb_len:.0f}자 / 구체성: {req.fb_spec:.1f}
+
+다음 5개 섹션으로 분석해 주세요:
+
+## 1. 피드백 감정 심층 분석 (각 분기별 핵심 키워드 및 전반적 평가)
+## 2. 성과-보상 정합성 평가 (현재 인상률이 피드백 수준과 맞는지)
+## 3. 2027년 연봉 추천 (구체적 금액 범위와 인상률 제시)
+## 4. 추천 근거 (3가지 이상 명확한 논거)
+## 5. 리스크 및 권고사항 (이탈 위험, 동기부여 포인트 등)
+
+모든 분석은 한국어로 작성해 주세요."""
+    try:
+        client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        msg = client.messages.create(
+            model=CHAT_MODEL, max_tokens=1800,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return {"result": msg.content[0].text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ── 헬스체크 ──────────────────────────────────────────────────
 
 @app.get("/api/health")
