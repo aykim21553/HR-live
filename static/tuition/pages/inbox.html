@@ -224,18 +224,22 @@ function appToRow(a) {
 
 // ─── API 데이터 로드 ──────────────────────────────────────────────────────────
 async function loadData() {
-  document.getElementById("tbody").innerHTML = `<tr><td colspan="11" class="loading">데이터 로딩 중...</td></tr>`;
+  // 기존 DEMO 배너 모두 제거 (새로고침 시 중복 방지)
+  document.querySelectorAll('.demo-banner').forEach(b => b.remove());
 
-  // ① 신규 엔드포인트 (applications.json)
+  // Render 서버 웜업 안내 메시지 (최초 연결 시 최대 30초 소요)
+  document.getElementById("tbody").innerHTML =
+    `<tr><td colspan="11" class="loading">서버 연결 중… (첫 접속 시 최대 30초 소요, 잠시 기다려 주세요)</td></tr>`;
+
+  // ① 신규 엔드포인트 (applications.json) — 타임아웃 25초 (Render 웜업 대기)
   try {
-    const res = await fetch(NEW_API, { signal: AbortSignal.timeout(4000) });
+    const res = await fetch(NEW_API, { signal: AbortSignal.timeout(25000) });
     if (res.ok) {
       const json = await res.json();
       allData = (Array.isArray(json) ? json : []).map(appToRow);
       isLive = true;
       document.getElementById("api-badge").textContent = "LIVE";
       document.getElementById("api-badge").className = "api-badge api-live";
-      // 실제 접수 데이터가 없어도 SAMPLE로 대체하지 않음
       const today = new Date().toISOString().slice(0,10);
       const monthAgo = new Date(Date.now() - 30*864e5).toISOString().slice(0,10);
       document.getElementById("date-from").value = monthAgo;
@@ -245,9 +249,9 @@ async function loadData() {
     }
   } catch {}
 
-  // ② 기존 Azure Functions API 시도
+  // ② 기존 Azure Functions API 시도 (5초)
   try {
-    const res = await fetch(`${API_BASE}/tuition/admin/inbox`, { signal: AbortSignal.timeout(4000) });
+    const res = await fetch(`${API_BASE}/tuition/admin/inbox`, { signal: AbortSignal.timeout(5000) });
     if (res.ok) {
       const json = await res.json();
       allData = json.items || [];
@@ -256,14 +260,15 @@ async function loadData() {
       document.getElementById("api-badge").className = "api-badge api-live";
     } else { throw new Error(); }
   } catch (e) {
+    // 서버 미연결 → 샘플 데이터 표시 + 배너 1개만 추가
     allData = SAMPLE;
     isLive = false;
     document.getElementById("api-badge").textContent = "DEMO";
     document.getElementById("api-badge").className = "api-badge api-demo";
-    // 서버 미연결 안내 배너
     const banner = document.createElement('div');
+    banner.className = 'demo-banner';
     banner.style.cssText = 'background:#FFF2CC;border:1px solid #b45309;border-radius:8px;padding:10px 16px;font-size:12px;color:#7a3c00;margin-bottom:12px;display:flex;align-items:center;gap:8px;';
-    banner.innerHTML = '<b>⚠ DEMO 모드:</b>&nbsp;서버에 연결되지 않아 샘플 데이터를 표시합니다. 실제 신청 이력은 서버 연결 후 확인하세요.';
+    banner.innerHTML = '<b>⚠ DEMO 모드:</b>&nbsp;서버가 슬립 상태입니다. 잠시 후 <b>↻ 새로고침</b>을 누르면 실제 데이터가 표시됩니다.';
     document.querySelector('.page').prepend(banner);
   }
 
