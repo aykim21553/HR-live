@@ -939,15 +939,29 @@ HR팀 드림</textarea>
         `<div class="rag-chunk"><span class="rag-meta">#${c.index+1} · 유사도 ${c.similarity ?? ''}</span>${escHtml(c.preview || '')}</div>`
       ).join('') || '<div class="rag-chunk">(발췌 없음)</div>';
 
+      const emailId = `email-${Math.random().toString(36).slice(2)}`;
       const li = document.createElement('li');
       li.innerHTML = `
         <div class="result-card">
-          <label class="flex items-center gap-2 mb-3 cursor-pointer select-none">
-            <input type="checkbox" class="pass-checkbox rounded" data-name="${escHtml(row.display_name || row.filename)}"
+          <label class="flex items-center gap-2 mb-2 cursor-pointer select-none">
+            <input type="checkbox" class="pass-checkbox rounded"
+                   data-name="${escHtml(row.display_name || row.filename)}"
+                   data-email-id="${emailId}"
                    data-score="${score}" onchange="updatePassSelection()">
             <span class="text-xs font-bold text-gray-600">1차 합격자로 선택</span>
             ${score >= 60 ? '<span class="text-xs font-bold text-green-600 ml-1">★ AI 추천</span>' : ''}
           </label>
+          <!-- 이메일 주소 (이력서 자동 추출 + 직접 수정 가능) -->
+          <div class="flex items-center gap-2 mb-3 pl-1">
+            <span class="material-symbols-outlined text-slate-400" style="font-size:.95rem;">mail</span>
+            <input id="${emailId}" type="email"
+                   value="${escHtml(row.email || '')}"
+                   placeholder="이메일 주소 (이력서에서 미추출 시 직접 입력)"
+                   class="flex-1 border rounded-lg px-2 py-1 text-xs"
+                   style="border-color:${row.email ? '#86EFAC' : '#E2E8F0'};color:${row.email ? '#16a34a' : '#94a3b8'};"
+                   oninput="updatePassSelection()">
+            ${row.email ? '<span class="text-xs text-green-600 font-bold whitespace-nowrap">✓ 자동추출</span>' : '<span class="text-xs text-amber-500 font-bold whitespace-nowrap">수동 입력 필요</span>'}
+          </div>
           <div class="flex items-start justify-between gap-4 mb-3">
             <div>
               <h4 class="font-extrabold text-slate-900 text-base font-headline mb-0.5">${escHtml(row.display_name || row.filename)}</h4>
@@ -1069,14 +1083,31 @@ HR팀 드림</textarea>
 })();
 
 window.updatePassSelection = function() {
-  const checked = document.querySelectorAll('.pass-checkbox:checked');
+  const checked = Array.from(document.querySelectorAll('.pass-checkbox:checked'));
   const panel = document.getElementById('send-panel');
   const msg = document.getElementById('selected-count-msg');
   const step2 = document.getElementById('step2-badge');
   const step3 = document.getElementById('step3-badge');
+
   if (checked.length > 0) {
     panel.classList.remove('hidden');
-    msg.textContent = `${checked.length}명 선택됨 — 이메일로 합격 통보를 발송합니다`;
+
+    // 각 체크된 카드의 이메일 인풋 값을 수집 → 수신자 필드 자동 채우기
+    const emails = checked.map(cb => {
+      const emailId = cb.dataset.emailId;
+      const inputEl = emailId ? document.getElementById(emailId) : null;
+      return inputEl ? inputEl.value.trim() : '';
+    }).filter(e => e.includes('@'));
+
+    const recipientsEl = document.getElementById('notify-recipients');
+    recipientsEl.value = emails.join(', ');
+
+    const missingCount = checked.length - emails.length;
+    let statusMsg = `${checked.length}명 선택됨`;
+    if (emails.length > 0) statusMsg += ` · 이메일 ${emails.length}개 자동 세팅`;
+    if (missingCount > 0) statusMsg += ` · ⚠️ ${missingCount}명 이메일 직접 입력 필요`;
+    msg.textContent = statusMsg;
+
     step2.style.cssText = 'background:#FFF7ED;border:1.5px solid #FED7AA;color:#EA580C;border-left:none;display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:.75rem;font-weight:700;';
     step3.style.cssText = 'background:#F0FDF4;border:1.5px solid #BBF7D0;color:#16a34a;border-left:none;display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:.75rem;font-weight:700;border-radius:0 100px 100px 0;';
   } else {

@@ -1677,6 +1677,7 @@ async def score_resumes(body: ScoreBatchBody):
             results.append({
                 "filename": name,
                 "display_name": re.sub(r"\.[^.]+$", "", name),
+                "email": "",
                 "score": 0,
                 "verdict": "이력서 텍스트 추출 실패 또는 너무 짧음",
                 "summary": "",
@@ -1696,9 +1697,23 @@ async def score_resumes(body: ScoreBatchBody):
         parsed = llm_score_one(client, excerpts, text, name)
         score = max(0, min(100, int(parsed.get("score", 0) or 0)))
 
+        # 이력서 본문에서 이메일 주소 추출
+        email_matches = re.findall(
+            r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}",
+            text
+        )
+        # 일반적인 도메인 필터 (이력서 내 실제 이메일만)
+        candidate_email = ""
+        for em in email_matches:
+            # 파일명처럼 생긴 것 제외 (.png .jpg .pdf 등)
+            if not re.search(r"\.(png|jpg|jpeg|gif|pdf|doc|xlsx|zip)$", em, re.I):
+                candidate_email = em
+                break
+
         results.append({
             "filename": name,
             "display_name": re.sub(r"\.[^.]+$", "", name),
+            "email": candidate_email,
             "score": score,
             "verdict": str(parsed.get("verdict", ""))[:300],
             "summary": str(parsed.get("summary", ""))[:1200],
