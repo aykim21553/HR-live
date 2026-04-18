@@ -1937,84 +1937,78 @@ async def hrx_salary_ai(req: HRXSalaryAIRequest):
 # ══════════════════════════════════════════════════════════════
 
 class NotificationRequest(BaseModel):
-    type: str  # "email" or "kakao"
-    candidates: list[str]
-    from_email: str = ""
+    type: str  # "email"
+    candidates: list[str]           # 합격자 이름 목록
+    recipients: list[str] = []      # 실제 수신자 이메일 주소 목록
+    from_email: str = ""            # 발신 Gmail 주소
+    smtp_pass_input: str = ""       # Gmail 앱 비밀번호 (UI에서 전달)
     subject: str = ""
     body: str = ""
-    kakao_api_key: str = ""
-    message: str = ""
 
 @app.post("/api/send-notification")
 async def send_notification(req: NotificationRequest):
-    """합격자 이메일/카카오톡 발송"""
+    """합격자 이메일 발송 (Gmail SMTP)"""
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    if req.type != "email":
+        return {"ok": False, "error": "지원하지 않는 발송 유형"}
+
+    # SMTP 설정: 환경변수 우선, 없으면 UI 입력값 사용
+    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user = os.getenv("SMTP_USER", "") or req.from_email
+    smtp_pass = os.getenv("SMTP_PASS", "") or req.smtp_pass_input
+
+    if not smtp_pass:
+        return {"ok": False, "error": "Gmail 앱 비밀번호가 입력되지 않았습니다."}
+    if not smtp_user:
+        return {"ok": False, "error": "발신 Gmail 주소가 입력되지 않았습니다."}
+    if not req.recipients:
+        return {"ok": False, "error": "수신자 이메일 주소가 없습니다."}
+
+    # 수신자와 이름 페어링 (수가 다르면 수신자 순환)
     sent = 0
     errors = []
+    pairs = list(zip(
+        req.candidates if req.candidates else [f"지원자{i+1}" for i in range(len(req.recipients))],
+        req.recipients
+    ))
+    # 수신자가 이름보다 많으면 나머지도 처리
+    if len(req.recipients) > len(req.candidates):
+        for i in range(len(req.candidates), len(req.recipients)):
+            pairs.append((f"지원자{i+1}", req.recipients[i]))
 
-    if req.type == "email":
-        import smtplib
-        from email.mime.text import MIMEText
-        from email.mime.multipart import MIMEMultipart
+    try:
+        # 연결 한 번으로 전체 발송
+        with smtplib.SMTP(smtp_host, smtp_port) as srv:
+            srv.ehlo()
+            srv.starttls()
+            srv.ehlo()
+            srv.login(smtp_user, smtp_pass)
 
-        smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
-        smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        smtp_user = os.getenv("SMTP_USER", req.from_email)
-        smtp_pass = os.getenv("SMTP_PASS", "")
-
-        if not smtp_pass:
-            # SMTP 비밀번호 미설정 시 — 시뮬레이션 모드
-            return {"ok": True, "sent": len(req.candidates),
-                    "note": "SMTP_PASS 환경변수 미설정 — 시뮬레이션 모드 (실제 발송 안 됨)"}
-
-        for name in req.candidates:
-            try:
-                msg = MIMEMultipart()
-                msg["From"] = req.from_email
-                msg["To"] = req.from_email  # 실제로는 후보자 이메일
-                msg["Subject"] = req.subject
-                body_text = req.body.replace("{이름}", name)
-                msg.attach(MIMEText(body_text, "plain", "utf-8"))
-                with smtplib.SMTP(smtp_host, smtp_port) as srv:
-                    srv.starttls()
-                    srv.login(smtp_user, smtp_pass)
+            for name, to_addr in pairs:
+                try:
+                    msg = MIMEMultipart("alternative")
+                    msg["From"] = smtp_user
+                    msg["To"] = to_addr
+                    msg["Subject"] = req.subject or "[채용] 합격 안내"
+                    body_text = (req.body or "").replace("{이름}", name)
+                    msg.attach(MIMEText(body_text, "plain", "utf-8"))
                     srv.send_message(msg)
-                sent += 1
-            except Exception as e:
-                errors.append(str(e))
+                    sent += 1
+                except Exception as e:
+                    errors.append(f"{to_addr}: {str(e)}")
 
-        return {"ok": len(errors) == 0, "sent": sent, "errors": errors}
+    except smtplib.SMTPAuthenticationError:
+        return {"ok": False, "error": "Gmail 인증 실패. 앱 비밀번호를 확인해주세요. (일반 비밀번호가 아닌 앱 비밀번호 16자리 필요)"}
+    except Exception as e:
+        return {"ok": False, "error": f"SMTP 연결 오류: {str(e)}"}
 
-    elif req.type == "kakao":
-        import httpx as _httpx
-        headers = {"Authorization": f"KakaoAK {req.kakao_api_key}",
-                   "Content-Type": "application/x-www-form-urlencoded"}
-        for name in req.candidates:
-            try:
-                async with _httpx.AsyncClient() as client:
-                    resp = await client.post(
-                        "https://kapi.kakao.com/v1/api/talk/friends/message/default/send",
-                        headers=headers,
-                        data={
-                            "receiver_uuids": '[""]',
-                            "template_object": json.dumps({
-                                "object_type": "text",
-                                "text": f"[채용알림] {name}님, {req.message}",
-                                "link": {"web_url": "https://hrroom.onrender.com"}
-                            })
-                        }
-                    )
-                    if resp.status_code == 200:
-                        sent += 1
-                    else:
-                        errors.append(f"{name}: {resp.text}")
-            except Exception as e:
-                errors.append(str(e))
-
-        if errors:
-            return {"ok": False, "sent": sent, "error": f"카카오 API 오류: {errors[0]}. REST API 키와 카카오 친구목록 권한을 확인하세요."}
-        return {"ok": True, "sent": sent}
-
-    return {"ok": False, "error": "지원하지 않는 발송 유형"}
+    if errors and sent == 0:
+        return {"ok": False, "sent": 0, "error": errors[0]}
+    return {"ok": True, "sent": sent, "errors": errors}
 
 
 # ── 헬스체크 ──────────────────────────────────────────────────

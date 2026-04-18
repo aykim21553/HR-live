@@ -646,58 +646,62 @@
 
   <!-- 2단계: 합격자 선택 후 발송 버튼 -->
   <div id="send-panel" class="hidden mt-6 p-5 rounded-2xl" style="background:#F0FDF4;border:1.5px solid #BBF7D0;">
-    <h3 class="text-sm font-extrabold text-green-800 mb-3">✅ 합격 통보 발송</h3>
-    <p class="text-xs text-green-700 mb-4" id="selected-count-msg"></p>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-      <div>
-        <label class="text-xs font-bold text-gray-700 block mb-1">발신 이메일 (SMTP)</label>
-        <input id="notify-from-email" type="email" placeholder="hr@company.com"
-               class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#86EFAC;">
+    <h3 class="text-sm font-extrabold text-green-800 mb-1">✅ 합격 통보 이메일 발송</h3>
+    <p class="text-xs text-green-700 mb-3" id="selected-count-msg"></p>
+
+    <!-- Gmail SMTP 자격증명 -->
+    <div class="p-3 rounded-xl mb-4" style="background:#EFF6FF;border:1.5px solid #BFDBFE;">
+      <p class="text-xs font-bold text-blue-800 mb-2">🔐 Gmail 발송 계정 설정</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-bold text-gray-700 block mb-1">발신 Gmail 주소</label>
+          <input id="notify-from-email" type="email" placeholder="hr@gmail.com"
+                 class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#93C5FD;">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-700 block mb-1">
+            Gmail 앱 비밀번호 (16자리)
+            <a href="https://myaccount.google.com/apppasswords" target="_blank"
+               class="ml-1 text-blue-500 underline font-normal">발급받기 →</a>
+          </label>
+          <input id="notify-smtp-pass" type="password" placeholder="xxxx xxxx xxxx xxxx"
+                 class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#93C5FD;">
+        </div>
       </div>
-      <div>
-        <label class="text-xs font-bold text-gray-700 block mb-1">이메일 제목</label>
-        <input id="notify-subject" type="text" value="[채용] 1차 면접 합격 안내"
-               class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#86EFAC;">
-      </div>
+      <p class="text-xs text-blue-600 mt-2">* Gmail → Google 계정 → 보안 → 2단계 인증 ON → 앱 비밀번호 발급</p>
+    </div>
+
+    <!-- 수신자 이메일 -->
+    <div class="mb-3">
+      <label class="text-xs font-bold text-gray-700 block mb-1">수신자 이메일 주소 (쉼표로 구분)</label>
+      <input id="notify-recipients" type="text" placeholder="candidate1@email.com, candidate2@email.com"
+             class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#86EFAC;">
+      <p class="text-xs text-gray-500 mt-1">선택된 합격자 수만큼 각각 발송됩니다. 순서대로 입력해주세요.</p>
+    </div>
+
+    <!-- 이메일 제목 & 본문 -->
+    <div class="mb-3">
+      <label class="text-xs font-bold text-gray-700 block mb-1">이메일 제목</label>
+      <input id="notify-subject" type="text" value="[채용] 1차 면접 합격 안내"
+             class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#86EFAC;">
     </div>
     <div class="mb-4">
-      <label class="text-xs font-bold text-gray-700 block mb-1">이메일 본문 템플릿</label>
-      <textarea id="notify-body" rows="5" class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#86EFAC;">안녕하세요, {이름}님.
+      <label class="text-xs font-bold text-gray-700 block mb-1">이메일 본문 템플릿 <span class="font-normal text-gray-400">({이름} 자동 치환)</span></label>
+      <textarea id="notify-body" rows="6" class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#86EFAC;">안녕하세요, {이름}님.
 
 귀하의 지원에 감사드립니다.
 검토 결과, 1차 면접 합격을 축하드립니다.
 
-일정 조율을 위해 아래 연락처로 연락 부탁드립니다.
+면접 일정 조율을 위해 아래 연락처로 연락 부탁드립니다.
+
 HR팀 드림</textarea>
     </div>
-    <!-- 카카오톡 -->
-    <div class="p-4 rounded-xl mb-4" style="background:rgba(254,229,86,0.15);border:1.5px solid #F0C040;">
-      <h4 class="text-xs font-bold mb-2" style="color:#886B00;">📱 카카오톡 알림 (선택)</h4>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label class="text-xs font-bold text-gray-600 block mb-1">카카오 REST API 키</label>
-          <input id="kakao-api-key" type="password" placeholder="카카오 REST API 키 입력"
-                 class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#F0C040;">
-        </div>
-        <div>
-          <label class="text-xs font-bold text-gray-600 block mb-1">카카오 메시지 내용</label>
-          <input id="kakao-msg" type="text" value="[채용알림] 1차 면접 합격을 축하드립니다!"
-                 class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#F0C040;">
-        </div>
-      </div>
-    </div>
-    <div class="flex gap-3">
-      <button onclick="sendNotifications('email')"
-              class="flex-1 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 text-white"
-              style="background:linear-gradient(135deg,#0d9488,#0f766e);">
-        <span class="material-symbols-outlined" style="font-size:.95rem;">mail</span>이메일 발송
-      </button>
-      <button onclick="sendNotifications('kakao')"
-              class="flex-1 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
-              style="background:#FEE500;color:#3A1D1D;border:1.5px solid #F0C040;">
-        💬 카카오톡 발송
-      </button>
-    </div>
+
+    <button onclick="sendNotifications()"
+            class="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 text-white"
+            style="background:linear-gradient(135deg,#0d9488,#0f766e);">
+      <span class="material-symbols-outlined" style="font-size:.95rem;">mail</span>이메일 발송
+    </button>
     <div id="send-result-msg" class="mt-3 text-sm hidden"></div>
   </div>
 </section>
@@ -1072,7 +1076,7 @@ window.updatePassSelection = function() {
   const step3 = document.getElementById('step3-badge');
   if (checked.length > 0) {
     panel.classList.remove('hidden');
-    msg.textContent = `${checked.length}명 선택됨 — 이메일 또는 카카오톡으로 합격 통보를 발송합니다`;
+    msg.textContent = `${checked.length}명 선택됨 — 이메일로 합격 통보를 발송합니다`;
     step2.style.cssText = 'background:#FFF7ED;border:1.5px solid #FED7AA;color:#EA580C;border-left:none;display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:.75rem;font-weight:700;';
     step3.style.cssText = 'background:#F0FDF4;border:1.5px solid #BBF7D0;color:#16a34a;border-left:none;display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:.75rem;font-weight:700;border-radius:0 100px 100px 0;';
   } else {
@@ -1080,49 +1084,55 @@ window.updatePassSelection = function() {
   }
 };
 
-window.sendNotifications = async function(type) {
+window.sendNotifications = async function() {
   const checked = Array.from(document.querySelectorAll('.pass-checkbox:checked'));
   if (!checked.length) { alert('합격자를 선택해주세요'); return; }
   const names = checked.map(cb => cb.dataset.name);
   const resultEl = document.getElementById('send-result-msg');
 
-  if (type === 'email') {
-    const from = document.getElementById('notify-from-email').value;
-    const subject = document.getElementById('notify-subject').value;
-    const body = document.getElementById('notify-body').value;
-    if (!from) { alert('발신 이메일을 입력해주세요'); return; }
-    try {
-      resultEl.classList.remove('hidden');
-      resultEl.style.color = '#0d9488';
-      resultEl.textContent = '발송 중…';
-      const res = await fetch('/api/send-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'email', candidates: names, from_email: from, subject, body })
-      });
-      const d = await res.json();
-      resultEl.textContent = d.ok ? `✅ ${d.sent}명에게 이메일 발송 완료` : `❌ ${d.error}`;
-    } catch(e) {
-      resultEl.textContent = '❌ 발송 실패: ' + e.message;
+  const fromEmail = document.getElementById('notify-from-email').value.trim();
+  const smtpPass = document.getElementById('notify-smtp-pass').value.trim();
+  const recipientsRaw = document.getElementById('notify-recipients').value.trim();
+  const subject = document.getElementById('notify-subject').value.trim();
+  const body = document.getElementById('notify-body').value;
+
+  if (!fromEmail) { alert('발신 Gmail 주소를 입력해주세요'); return; }
+  if (!smtpPass) { alert('Gmail 앱 비밀번호를 입력해주세요 (16자리)'); return; }
+  if (!recipientsRaw) { alert('수신자 이메일 주소를 입력해주세요'); return; }
+
+  // 수신자 이메일 파싱 (쉼표 구분)
+  const recipients = recipientsRaw.split(',').map(e => e.trim()).filter(e => e.includes('@'));
+  if (!recipients.length) { alert('유효한 이메일 주소를 입력해주세요'); return; }
+
+  resultEl.classList.remove('hidden');
+  resultEl.style.color = '#0d9488';
+  resultEl.textContent = `발송 중… (${recipients.length}명)`;
+
+  try {
+    const res = await fetch('/api/send-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'email',
+        candidates: names,
+        recipients: recipients,
+        from_email: fromEmail,
+        smtp_pass_input: smtpPass,
+        subject,
+        body
+      })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      resultEl.style.color = '#16a34a';
+      resultEl.textContent = `✅ ${d.sent}명에게 이메일 발송 완료!`;
+    } else {
+      resultEl.style.color = '#dc2626';
+      resultEl.textContent = `❌ 발송 실패: ${d.error || d.errors?.join(', ')}`;
     }
-  } else {
-    const apiKey = document.getElementById('kakao-api-key').value;
-    const msg = document.getElementById('kakao-msg').value;
-    if (!apiKey) { alert('카카오 REST API 키를 입력해주세요'); return; }
-    try {
-      resultEl.classList.remove('hidden');
-      resultEl.style.color = '#886B00';
-      resultEl.textContent = '카카오톡 발송 중…';
-      const res = await fetch('/api/send-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'kakao', candidates: names, kakao_api_key: apiKey, message: msg })
-      });
-      const d = await res.json();
-      resultEl.textContent = d.ok ? `💬 카카오톡 발송 완료 (${d.sent}명)` : `❌ ${d.error}`;
-    } catch(e) {
-      resultEl.textContent = '❌ 발송 실패: ' + e.message;
-    }
+  } catch(e) {
+    resultEl.style.color = '#dc2626';
+    resultEl.textContent = '❌ 서버 오류: ' + e.message;
   }
 };
 </script>
