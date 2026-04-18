@@ -237,21 +237,27 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
             Claude AI 분석 · Vocabulary 생성
           </button>
         </div>
-        <!-- 직접 작성 모드 결과 -->
-        <div id="direct-result" class="hidden mt-4">
-          <div class="flex items-center gap-2 mb-3">
-            <div class="sec-line"></div>
-            <span class="text-sm font-bold text-gray-700">분석 결과</span>
-            <span class="text-xs text-gray-400 ml-1">직접 작성 상황 기반 맞춤 Vocabulary</span>
-            <button onclick="downloadDirectDocx()" id="direct-docx-btn"
-                    class="text-xs font-bold px-4 py-2 rounded-xl border flex items-center gap-1.5 ml-auto"
-                    style="color:#1d4ed8;border-color:#BFDBFE;background:#EFF6FF;">
-              <span class="material-symbols-outlined" style="font-size:.9rem;">download</span>
-              Word 다운로드
-            </button>
-          </div>
-          <div id="direct-out" class="result-box"></div>
+      </div>
+
+      <!-- 직접 작성 모드 결과 — feat-card 밖에 위치 (overflow:hidden 영향 없음) -->
+      <div id="direct-result" class="hidden mt-4">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="sec-line"></div>
+          <span class="text-sm font-bold text-gray-700">분석 결과</span>
+          <span class="text-xs text-gray-400 ml-1">직접 작성 상황 기반 맞춤 Vocabulary</span>
+          <button onclick="downloadDirectDocx()" id="direct-docx-btn"
+                  class="text-xs font-bold px-4 py-2 rounded-xl border flex items-center gap-1.5 ml-auto"
+                  style="color:#1d4ed8;border-color:#BFDBFE;background:#EFF6FF;">
+            <span class="material-symbols-outlined" style="font-size:.9rem;">download</span>
+            Word 다운로드
+          </button>
         </div>
+        <!-- 헤더 + 면책 문구 -->
+        <div class="px-1 mb-2">
+          <p class="text-xs font-bold text-orange-600">한화투자증권 혁신(리더)지원실 제공</p>
+          <p class="text-xs text-gray-400">※ 코칭 보조 자료입니다. 각 개별 상황에 맞춰 참고용으로만 사용하세요.</p>
+        </div>
+        <div id="direct-out" class="result-box" style="min-height:200px;"></div>
       </div>
     </section>
 

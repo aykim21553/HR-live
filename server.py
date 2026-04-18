@@ -1799,12 +1799,14 @@ async def hrx_feedback_direct(req: FeedbackDirectRequest):
     if not req.situation_text or len(req.situation_text.strip()) < 20:
         raise HTTPException(status_code=400, detail="상황 텍스트가 너무 짧습니다.")
 
-    prompt = f"""당신은 한국 기업 HR 전문가입니다. 아래 코칭 상황을 깊이 이해하고, 이 상황에 최적화된 피드백 Vocabulary Pool을 생성해 주세요.
+    prompt = f"""당신은 한화투자증권 혁신(리더)지원실 소속 HR 코칭 전문가입니다. 아래 코칭 상황을 깊이 이해하고, 이 상황에 최적화된 피드백 Vocabulary Pool을 생성해 주세요.
 
 [코칭 상황]
 {req.situation_text}
 
 위 상황을 분석하여 다음 7개 섹션을 한국어로 작성해 주세요. 각 항목은 불릿(·)으로 구분하고, 이 상황의 맥락과 뉘앙스를 충분히 반영해 주세요.
+
+중요: 응답의 첫 줄에 전체 제목(예: "# 한국 기업 HR 코칭 Vocabulary Pool" 등)을 절대 추가하지 마세요. 아래 섹션 헤더(##)만 사용하세요.
 
 ## 1. 상황 분석 요약 (이 상황의 핵심 코칭 포인트 3~4가지)
 ## 2. 핵심 코칭 표현 (이 상황에서 가장 효과적인 표현 10개 이상)
@@ -1823,7 +1825,20 @@ async def hrx_feedback_direct(req: FeedbackDirectRequest):
             max_tokens=3500,
             messages=[{"role": "user", "content": prompt}],
         )
-        return {"result": msg.content[0].text}
+        raw_text = msg.content[0].text
+
+        # 첫 줄이 # 로 시작하는 전체 제목이면 제거 (## 섹션 헤더는 유지)
+        lines = raw_text.split('\n')
+        filtered_lines = []
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            # 첫 번째 실질 줄이 # 제목(##이 아닌 단일 #)이면 건너뜀
+            if i == 0 and stripped.startswith('#') and not stripped.startswith('##'):
+                continue
+            filtered_lines.append(line)
+        result_text = '\n'.join(filtered_lines).lstrip('\n')
+
+        return {"result": result_text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
