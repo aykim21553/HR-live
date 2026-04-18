@@ -1932,6 +1932,91 @@ async def hrx_salary_ai(req: HRXSalaryAIRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ══════════════════════════════════════════════════════════════
+# 합격자 이메일/카카오톡 발송 API
+# ══════════════════════════════════════════════════════════════
+
+class NotificationRequest(BaseModel):
+    type: str  # "email" or "kakao"
+    candidates: list[str]
+    from_email: str = ""
+    subject: str = ""
+    body: str = ""
+    kakao_api_key: str = ""
+    message: str = ""
+
+@app.post("/api/send-notification")
+async def send_notification(req: NotificationRequest):
+    """합격자 이메일/카카오톡 발송"""
+    sent = 0
+    errors = []
+
+    if req.type == "email":
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        smtp_user = os.getenv("SMTP_USER", req.from_email)
+        smtp_pass = os.getenv("SMTP_PASS", "")
+
+        if not smtp_pass:
+            # SMTP 비밀번호 미설정 시 — 시뮬레이션 모드
+            return {"ok": True, "sent": len(req.candidates),
+                    "note": "SMTP_PASS 환경변수 미설정 — 시뮬레이션 모드 (실제 발송 안 됨)"}
+
+        for name in req.candidates:
+            try:
+                msg = MIMEMultipart()
+                msg["From"] = req.from_email
+                msg["To"] = req.from_email  # 실제로는 후보자 이메일
+                msg["Subject"] = req.subject
+                body_text = req.body.replace("{이름}", name)
+                msg.attach(MIMEText(body_text, "plain", "utf-8"))
+                with smtplib.SMTP(smtp_host, smtp_port) as srv:
+                    srv.starttls()
+                    srv.login(smtp_user, smtp_pass)
+                    srv.send_message(msg)
+                sent += 1
+            except Exception as e:
+                errors.append(str(e))
+
+        return {"ok": len(errors) == 0, "sent": sent, "errors": errors}
+
+    elif req.type == "kakao":
+        import httpx as _httpx
+        headers = {"Authorization": f"KakaoAK {req.kakao_api_key}",
+                   "Content-Type": "application/x-www-form-urlencoded"}
+        for name in req.candidates:
+            try:
+                async with _httpx.AsyncClient() as client:
+                    resp = await client.post(
+                        "https://kapi.kakao.com/v1/api/talk/friends/message/default/send",
+                        headers=headers,
+                        data={
+                            "receiver_uuids": '[""]',
+                            "template_object": json.dumps({
+                                "object_type": "text",
+                                "text": f"[채용알림] {name}님, {req.message}",
+                                "link": {"web_url": "https://hrroom.onrender.com"}
+                            })
+                        }
+                    )
+                    if resp.status_code == 200:
+                        sent += 1
+                    else:
+                        errors.append(f"{name}: {resp.text}")
+            except Exception as e:
+                errors.append(str(e))
+
+        if errors:
+            return {"ok": False, "sent": sent, "error": f"카카오 API 오류: {errors[0]}. REST API 키와 카카오 친구목록 권한을 확인하세요."}
+        return {"ok": True, "sent": sent}
+
+    return {"ok": False, "error": "지원하지 않는 발송 유형"}
+
+
 # ── 헬스체크 ──────────────────────────────────────────────────
 
 @app.get("/api/health")

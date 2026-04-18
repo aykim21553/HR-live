@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{--ox:#FF6900;--ox-dark:#a14000;}
 body{font-family:'Inter',sans-serif;background:#FFF8F2;margin:0;}
@@ -130,7 +131,6 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
   <div class="sticky top-16 z-40 border-b" style="background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-color:#f0f0f0;">
     <div class="max-w-6xl mx-auto px-6 py-2.5 flex gap-2 overflow-x-auto">
       <button class="tab-btn active" data-tab="vocab" onclick="switchTab('vocab')">💬 Feedback Vocabulary</button>
-      <button class="tab-btn" data-tab="analytics" onclick="switchTab('analytics')">📊 연봉 Analytics</button>
       <button class="tab-btn" data-tab="global" onclick="switchTab('global')">🌏 Global HR Pool</button>
     </div>
   </div>
@@ -151,23 +151,40 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="ox-label">직원 유형</label>
-            <select id="voc-emp" class="ox-select">
+            <select id="voc-emp" class="ox-select" onchange="toggleCustom('voc-emp', 'voc-emp-custom')">
               <option>고성과자</option><option>승진후보형</option><option>전문핵심형</option>
               <option>성장형</option><option>저성과자</option><option>갈등유발형</option>
+              <option>신입형</option><option>경력전환형</option><option>번아웃형</option>
+              <option>인간관계문제형</option><option>목표모호형</option><option>자기효능감저하형</option>
+              <option>완벽주의형</option><option>팀플레이어형</option><option>독립적전문가형</option>
+              <option>혁신추구형</option><option>안정추구형</option><option>리더십준비형</option>
+              <option>멘토형</option><option>기타(직접입력)</option>
             </select>
+            <input id="voc-emp-custom" class="ox-input mt-2 hidden" placeholder="직원 유형을 직접 입력..."/>
           </div>
           <div>
             <label class="ox-label">코칭 상황</label>
-            <select id="voc-scen" class="ox-select">
+            <select id="voc-scen" class="ox-select" onchange="toggleCustom('voc-scen', 'voc-scen-custom')">
               <option>강점 칭찬</option><option>성장 코칭</option><option>성과 개선</option>
               <option>역할 확장</option><option>경고</option><option>동기부여</option>
+              <option>연봉 협상</option><option>승진 면담</option><option>퇴직 방지</option>
+              <option>갈등 조정</option><option>목표 설정</option><option>역할 변경</option>
+              <option>복귀 지원</option><option>신뢰 회복</option><option>창의성 개발</option>
+              <option>자기인식 향상</option><option>리더십 개발</option><option>팀워크 강화</option>
+              <option>스트레스 관리</option><option>기타(직접입력)</option>
             </select>
+            <input id="voc-scen-custom" class="ox-input mt-2 hidden" placeholder="코칭 상황을 직접 입력..."/>
           </div>
           <div>
             <label class="ox-label">커뮤니케이션 톤</label>
-            <select id="voc-tone" class="ox-select">
+            <select id="voc-tone" class="ox-select" onchange="toggleCustom('voc-tone', 'voc-tone-custom')">
               <option>코칭형</option><option>공식적</option><option>직설형</option><option>공감형</option>
+              <option>질문형</option><option>지지형</option><option>도전형</option><option>따뜻한</option>
+              <option>중립적</option><option>분석적</option><option>격려형</option><option>전략적</option>
+              <option>협력형</option><option>멘토링형</option><option>실용적</option><option>성찰유도형</option>
+              <option>목표지향형</option><option>구조적</option><option>솔직한</option><option>기타(직접입력)</option>
             </select>
+            <input id="voc-tone-custom" class="ox-input mt-2 hidden" placeholder="커뮤니케이션 톤을 직접 입력..."/>
           </div>
           <div>
             <label class="ox-label">추가 맥락 (선택)</label>
@@ -186,6 +203,11 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
           <div class="sec-line"></div>
           <span class="text-sm font-bold text-gray-700">생성 결과</span>
           <span class="text-xs text-gray-400 ml-1">의사결정 보조용 — 최종 피드백은 관리자 검토 후 확정하세요</span>
+          <button onclick="downloadVocabExcel()" class="text-xs font-bold px-4 py-2 rounded-xl border flex items-center gap-1.5 ml-auto"
+                  style="color:#EA580C;border-color:#FED7AA;background:#FFF7ED;">
+            <span class="material-symbols-outlined" style="font-size:.9rem;">download</span>
+            Excel 다운로드
+          </button>
         </div>
         <div id="voc-out" class="result-box"></div>
       </div>
@@ -198,111 +220,24 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
         <div id="voc-fb-content" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         <p class="text-xs text-gray-400 mt-2 text-center">※ Anthropic API 키가 연결되면 Claude가 훨씬 풍부한 Pool을 생성합니다</p>
       </div>
-    </section>
 
-    <!-- ══════════ TAB 2: HR ANALYTICS ══════════ -->
-    <section id="tab-analytics" class="tab-section hidden">
-      <div class="flex items-start gap-3 mb-5">
-        <div class="sec-line mt-1"></div>
-        <div>
-          <h2 class="text-xl font-bold text-gray-900">📊 연봉 리뷰 & 인사이트</h2>
-          <p class="text-sm text-gray-400 mt-0.5">피드백 감정분석 × 연봉 상관관계 · 팀별 / 개인별 AI 분석</p>
+      <div class="feat-card mt-4">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-orange-500 text-lg">✏️</span>
+          <span class="font-bold text-gray-800 text-sm">직접 작성 모드</span>
+          <span class="text-xs text-gray-400">· Claude 없이 즉시 Vocabulary 확인</span>
         </div>
-      </div>
-
-      <div id="analytics-loading" class="text-center py-16 text-gray-400 text-sm">
-        <div class="spinner" style="border-color:rgba(249,115,22,.3);border-top-color:#F97316;margin:0 auto 12px;"></div>
-        데이터 로딩 중…
-      </div>
-      <div id="analytics-body" class="hidden">
-        <!-- KPI -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-          <div class="metric-card"><div class="metric-val" id="kpi-total">—</div><div class="metric-label">총 직원 수</div></div>
-          <div class="metric-card"><div class="metric-val" id="kpi-avg-sal">—</div><div class="metric-label">평균 연봉 (26년)</div></div>
-          <div class="metric-card"><div class="metric-val" id="kpi-avg-raise">—</div><div class="metric-label">평균 인상률 (26년)</div></div>
-          <div class="metric-card"><div class="metric-val" id="kpi-corr">—</div><div class="metric-label">피드백-인상률 상관계수</div></div>
-        </div>
-        <!-- Sub-tabs -->
-        <div class="flex gap-2 mb-5">
-          <button class="stab-btn active" data-stab="overview" onclick="switchStab('overview')">📈 전체 Overview</button>
-          <button class="stab-btn" data-stab="team" onclick="switchStab('team')">👥 팀별 분석</button>
-          <button class="stab-btn" data-stab="individual" onclick="switchStab('individual')">👤 개인별 AI 분석</button>
-        </div>
-        <!-- Overview -->
-        <div id="stab-overview" class="stab-section">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-            <div class="feat-card"><h3 class="text-sm font-bold text-gray-700 mb-3">피드백 감정점수 × 연봉 인상률</h3><canvas id="ch-scatter" height="260"></canvas></div>
-            <div class="feat-card"><h3 class="text-sm font-bold text-gray-700 mb-3">26년 인상률 분포 (팀별)</h3><canvas id="ch-hist" height="260"></canvas></div>
-          </div>
-          <div class="feat-card"><h3 class="text-sm font-bold text-gray-700 mb-3">피드백 구체성 × 인상률 (직급별)</h3><canvas id="ch-spec" height="200"></canvas></div>
-          <div id="corr-msg" class="mt-4 text-sm font-semibold px-4 py-3 rounded-xl border"></div>
-        </div>
-        <!-- Team -->
-        <div id="stab-team" class="stab-section hidden">
-          <div class="feat-card mb-5">
-            <h3 class="text-sm font-bold text-gray-700 mb-3">팀별 핵심 지표 요약</h3>
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm" id="team-tbl">
-                <thead><tr class="border-b border-gray-100">
-                  <th class="text-left py-2 px-3 text-xs font-bold text-gray-500">팀</th>
-                  <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">인원</th>
-                  <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">평균 연봉(26)</th>
-                  <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">인상률(%)</th>
-                  <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">피드백 점수</th>
-                  <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">피드백 길이</th>
-                  <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">구체성</th>
-                </tr></thead>
-                <tbody id="team-tbl-body"></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div class="feat-card"><h3 class="text-sm font-bold text-gray-700 mb-3">팀별 평균 인상률 (색상=피드백 점수)</h3><canvas id="ch-team-bar" height="280"></canvas></div>
-            <div class="feat-card"><h3 class="text-sm font-bold text-gray-700 mb-3">팀별 피드백 점수 vs 인상률 버블</h3><canvas id="ch-team-bubble" height="280"></canvas></div>
-          </div>
-        </div>
-        <!-- Individual -->
-        <div id="stab-individual" class="stab-section hidden">
-          <div class="feat-card mb-5">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label class="ox-label">팀 선택</label>
-                <select id="ind-team" class="ox-select" onchange="filterEmployees()">
-                  <option value="">전체</option>
-                </select>
-              </div>
-              <div class="md:col-span-2">
-                <label class="ox-label">직원 선택</label>
-                <select id="ind-emp" class="ox-select" onchange="showEmployee()"></select>
-              </div>
-            </div>
-          </div>
-          <div id="ind-detail" class="hidden">
-            <div class="grid grid-cols-3 gap-4 mb-5">
-              <div class="metric-card"><div class="metric-val" id="ind-sal24">—</div><div class="metric-label">2024년 연봉</div></div>
-              <div class="metric-card"><div class="metric-val" id="ind-sal25">—</div><div class="metric-label">2025년 연봉</div></div>
-              <div class="metric-card"><div class="metric-val" id="ind-sal26">—</div><div class="metric-label">2026년 연봉</div></div>
-            </div>
-            <div class="feat-card mb-5"><h3 class="text-sm font-bold text-gray-700 mb-3">3개년 연봉 추이</h3><canvas id="ch-ind-line" height="180"></canvas></div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5" id="ind-fb-grid"></div>
-            <div class="feat-card mb-5" style="background:#FFF7ED;">
-              <p class="text-sm font-semibold text-gray-700" id="ind-summary"></p>
-            </div>
-            <button id="ind-ai-btn" class="grad-btn px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 mb-4"
-                    onclick="requestSalaryAI()">
-              <span class="material-symbols-outlined" style="font-size:1rem;">psychology</span>
-              Claude AI — 2027년 연봉 적정 수준 분석 요청
-            </button>
-            <div id="ind-ai-result" class="hidden">
-              <div class="flex items-center gap-2 mb-3"><div class="sec-line"></div><span class="text-sm font-bold text-gray-700">Claude AI 분석 결과</span></div>
-              <div id="ind-ai-out" class="result-box"></div>
-            </div>
-          </div>
-        </div>
+        <label class="ox-label">상황·맥락을 직접 작성하면 기본 Vocabulary Pool을 즉시 표시합니다</label>
+        <textarea id="voc-direct" class="ox-textarea" rows="4" placeholder="예: 이번 분기 목표 달성은 했지만 팀원과의 소통 방식에 개선이 필요한 성장형 직원과의 면담 상황입니다..."></textarea>
+        <button class="grad-btn w-full mt-3 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+                onclick="generateDirectVocab()" style="font-size:.85rem;">
+          <span class="material-symbols-outlined" style="font-size:.95rem;">bolt</span>
+          즉시 Vocabulary 확인
+        </button>
       </div>
     </section>
 
-    <!-- ══════════ TAB 3: GLOBAL HR POOL ══════════ -->
+    <!-- ══════════ TAB 2: GLOBAL HR POOL ══════════ -->
     <section id="tab-global" class="tab-section hidden">
       <div class="flex items-start gap-3 mb-5">
         <div class="sec-line mt-1"></div>
@@ -323,10 +258,35 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5" id="g-region-cards"></div>
         <!-- Charts -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-          <div class="feat-card"><h3 class="text-sm font-bold text-gray-700 mb-3">지역별 인원 분포</h3><canvas id="ch-g-pie" height="240"></canvas></div>
-          <div class="feat-card"><h3 class="text-sm font-bold text-gray-700 mb-3">지역별 평균 시급 (USD/h)</h3><canvas id="ch-g-rate" height="240"></canvas></div>
+          <div class="feat-card"><h3 class="text-sm font-bold text-gray-700 mb-3">지역별 인원 분포</h3><canvas id="ch-g-pie" height="160"></canvas></div>
+          <div class="feat-card"><h3 class="text-sm font-bold text-gray-700 mb-3">지역별 평균 시급 (USD/h)</h3><canvas id="ch-g-rate" height="160"></canvas></div>
         </div>
-        <div class="feat-card mb-5"><h3 class="text-sm font-bold text-gray-700 mb-3">전문분야별 인원 수</h3><canvas id="ch-g-spec" height="180"></canvas></div>
+        <div class="feat-card mb-5"><h3 class="text-sm font-bold text-gray-700 mb-3">전문분야별 인원 수</h3><canvas id="ch-g-spec" height="130"></canvas></div>
+        <!-- Resume Upload -->
+        <div class="feat-card mb-5" style="border-color:#BBF7D0;">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-green-600 text-lg">📎</span>
+            <span class="font-bold text-gray-800 text-sm">이력서 업로드 · 후보자 매칭</span>
+          </div>
+          <p class="text-xs text-gray-400 mb-3">PDF·DOCX 이력서를 업로드하면 개발자 Pool과 스킬 기반으로 비교합니다</p>
+          <div class="flex gap-3 mb-3">
+            <label class="grad-btn px-4 py-2 rounded-xl text-sm font-bold cursor-pointer flex items-center gap-2">
+              <span class="material-symbols-outlined" style="font-size:.95rem;">upload_file</span>
+              이력서 선택
+              <input type="file" id="resume-upload-input" accept=".pdf,.docx,.txt" multiple class="hidden" onchange="handleResumeUpload(event)">
+            </label>
+            <button onclick="runResumeMatch()" id="resume-match-btn" class="px-4 py-2 rounded-xl text-sm font-bold hidden"
+                    style="border:1.5px solid #EA580C;color:#EA580C;background:#FFF7ED;">
+              🎯 프로젝트 매칭 실행
+            </button>
+          </div>
+          <div id="resume-file-list" class="space-y-1.5 mb-3"></div>
+          <div id="resume-match-result" class="hidden">
+            <p class="text-xs font-bold text-gray-700 mb-2">업로드 후보자 vs Pool 개발자 — 스킬 키워드 매칭</p>
+            <div id="resume-match-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
+          </div>
+        </div>
+
         <!-- Filters -->
         <div class="feat-card mb-5">
           <h3 class="text-sm font-bold text-gray-700 mb-3">🔍 필터 검색</h3>
@@ -391,7 +351,7 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
         <div id="mtab-ma"><div id="gm-a-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div></div>
         <div id="mtab-mb" class="hidden"><div id="gm-b-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div></div>
         <div id="mtab-mall" class="hidden">
-          <div class="feat-card mb-5"><h3 class="text-sm font-bold text-gray-700 mb-3">전체 후보 — Fit Score vs Risk Score</h3><canvas id="ch-match-scatter" height="300"></canvas></div>
+          <div class="feat-card mb-5"><h3 class="text-sm font-bold text-gray-700 mb-3">전체 후보 — Fit Score vs Risk Score</h3><canvas id="ch-match-scatter" height="220"></canvas></div>
           <div class="feat-card"><div class="overflow-x-auto"><table class="w-full text-sm" id="match-all-tbl">
             <thead><tr class="border-b border-gray-100">
               <th class="text-left py-2 px-3 text-xs font-bold text-gray-500">이름</th>
@@ -507,28 +467,36 @@ function pct(n){return n.toFixed(2)+'%';}
 function fmtScore(s){const c=s>20?'#16a34a':s>-20?'#d97706':'#dc2626';return`<span style="color:${c};font-weight:700">${s.toFixed(0)}점</span>`;}
 function fitColor(f){return f>=70?'#16a34a':f>=50?'#d97706':'#dc2626';}
 
-function renderMarkdown(raw){
+function renderMarkdown(raw) {
+  if (!raw) return '';
   let s = raw;
-  // headers
-  s = s.replace(/^## (.+)$/gm,'<h2>$1</h2>');
-  s = s.replace(/^### (.+)$/gm,'<h3>$1</h3>');
-  // bold
-  s = s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-  // bullet list — wrap consecutive li items in ul
-  s = s.replace(/^[-•]\s+(.+)$/gm,'<li>$1</li>');
-  s = s.replace(/(<li>.*<\/li>\n?)+/gs,(m)=>`<ul>${m}</ul>`);
-  // numbered
-  s = s.replace(/^\d+\.\s+(.+)$/gm,'<li>$1</li>');
-  // paragraphs
+  // h2, h3
+  s = s.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  s = s.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  // bold — multiline 안 되는 경우 대비 먼저 처리 후 남은 ** 제거
+  s = s.replace(/\*\*(.+?)\*\*/gs, '<strong>$1</strong>');
+  s = s.replace(/\*\*/g, '');  // 남은 ** 모두 제거
+  // italic
+  s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // bullet list
+  s = s.replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>');
+  // numbered list
+  s = s.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+  // wrap li groups in ul
+  s = s.replace(/(<li>[\s\S]*?<\/li>)(\n(?!<li>)|$)/g, (m) => m);
+  s = s.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+  // horizontal rule
+  s = s.replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid #FED7AA;margin:12px 0;">');
+  // paragraphs — lines not already tagged
   const lines = s.split('\n');
   const out = [];
-  for(const ln of lines){
-    const t=ln.trim();
-    if(!t){out.push('<br>');continue;}
-    if(t.startsWith('<h')||t.startsWith('<ul')||t.startsWith('<li')||t.startsWith('<br')){out.push(t);continue;}
-    out.push(`<p>${t}</p>`);
+  for (const ln of lines) {
+    const t = ln.trim();
+    if (!t) { out.push(''); continue; }
+    if (/^<(h[23]|ul|li|hr|strong|em)/.test(t)) { out.push(t); continue; }
+    out.push('<p style="margin:4px 0;">' + t + '</p>');
   }
-  return out.join('');
+  return out.join('\n');
 }
 
 // ════════════════════════════════════════════
@@ -563,6 +531,20 @@ async function checkHealth(){
 // ════════════════════════════════════════════
 // FEEDBACK VOCABULARY
 // ════════════════════════════════════════════
+function toggleCustom(selId, inputId) {
+  const sel = document.getElementById(selId);
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  inp.classList.toggle('hidden', sel.value !== '기타(직접입력)');
+}
+function getVocabVal(selId, customId) {
+  const sel = document.getElementById(selId);
+  if (sel.value === '기타(직접입력)') {
+    return document.getElementById(customId).value || sel.value;
+  }
+  return sel.value;
+}
+
 async function generateVocab(){
   const btn=document.getElementById('voc-btn');
   btn.disabled=true;
@@ -573,9 +555,9 @@ async function generateVocab(){
     const res=await fetch('/api/hrx/feedback',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        emp_type:document.getElementById('voc-emp').value,
-        scenario:document.getElementById('voc-scen').value,
-        tone:document.getElementById('voc-tone').value,
+        emp_type: getVocabVal('voc-emp', 'voc-emp-custom'),
+        scenario: getVocabVal('voc-scen', 'voc-scen-custom'),
+        tone: getVocabVal('voc-tone', 'voc-tone-custom'),
         context:document.getElementById('voc-ctx').value
       })
     });
@@ -587,6 +569,34 @@ async function generateVocab(){
   }catch(e){showVocabFallback();}
   btn.disabled=false;
   btn.innerHTML='<span class="material-symbols-outlined" style="font-size:1rem;">auto_awesome</span> Claude AI — Vocabulary Pool 생성';
+}
+
+function generateDirectVocab(){
+  const ctx = document.getElementById('voc-direct').value.trim();
+  showVocabFallback();
+}
+
+function downloadVocabExcel(){
+  const outEl = document.getElementById('voc-out');
+  if (!outEl || !window.XLSX) return;
+  const text = outEl.innerText || outEl.textContent || '';
+  const lines = text.split('\n').filter(l => l.trim());
+  let currentSection = '기타';
+  const rows = [];
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) continue;
+    if (t.startsWith('##')) {
+      currentSection = t.replace(/^#+\s*/, '');
+      continue;
+    }
+    rows.push({ 섹션: currentSection, 내용: t });
+  }
+  if (!rows.length) { alert('내용이 없습니다.'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Vocabulary');
+  XLSX.writeFile(wb, 'FeedbackVocabulary.xlsx');
 }
 
 function showVocabFallback(){
@@ -1044,6 +1054,41 @@ function renderMatchScatter(){
       }
     }
   });
+}
+
+// ════════════════════════════════════════════
+// RESUME UPLOAD & MATCHING
+// ════════════════════════════════════════════
+let uploadedResumes = [];
+function handleResumeUpload(event) {
+  const files = Array.from(event.target.files);
+  uploadedResumes = files;
+  const listEl = document.getElementById('resume-file-list');
+  listEl.innerHTML = files.map(f => `
+    <div class="flex items-center gap-2 text-xs text-gray-600 p-2 rounded-lg" style="background:#F0FDF4;border:1px solid #BBF7D0;">
+      <span class="material-symbols-outlined text-green-600" style="font-size:.9rem;">description</span>
+      <span class="font-semibold">${f.name}</span>
+      <span class="text-gray-400 ml-auto">${(f.size/1024).toFixed(0)} KB</span>
+    </div>`).join('');
+  if (files.length > 0) document.getElementById('resume-match-btn').classList.remove('hidden');
+}
+
+function runResumeMatch() {
+  if (!uploadedResumes.length) return;
+  const proj = PROJECTS[parseInt(document.getElementById('gm-proj')?.value || 0)];
+  const cards = uploadedResumes.map(f => {
+    const name = f.name.replace(/\.(pdf|docx|txt)$/i, '').replace(/_/g, ' ');
+    return `<div class="dev-card" style="border-color:#BBF7D0;">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-green-600 font-bold text-sm">📄 ${name}</span>
+        <span class="tag ml-auto" style="background:#F0FDF4;color:#16a34a;border:1px solid #BBF7D0;">업로드 후보</span>
+      </div>
+      <p class="text-xs text-gray-500">이력서 파일 분석 — 서버 연결 후 스킬 자동 추출됩니다</p>
+      <p class="text-xs text-gray-400 mt-1">파일: ${f.name} (${(f.size/1024).toFixed(0)} KB)</p>
+    </div>`;
+  }).join('');
+  document.getElementById('resume-match-cards').innerHTML = cards;
+  document.getElementById('resume-match-result').classList.remove('hidden');
 }
 
 // ════════════════════════════════════════════

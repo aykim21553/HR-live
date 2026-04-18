@@ -625,13 +625,82 @@
              style="background: rgba(186,26,26,0.06); border: 1px solid rgba(186,26,26,0.18)"></div>
 
         <!-- Results -->
-        <section id="results-section" class="hidden mt-6">
-          <div class="flex items-baseline justify-between mb-4">
-            <h3 class="text-base font-extrabold font-headline text-slate-900">적합도 리스트 (LLM 판정)</h3>
-            <p id="results-meta" class="text-xs text-slate-400"></p>
-          </div>
-          <ol id="result-list" class="space-y-3 list-none p-0 m-0"></ol>
-        </section>
+<section id="results-section" class="hidden mt-6">
+  <!-- 3단계 Progress -->
+  <div class="flex items-center gap-0 mb-5">
+    <div class="step-done flex items-center gap-1.5 px-3 py-1.5 rounded-l-full text-xs font-bold" style="background:#FFF7ED;border:1.5px solid #FED7AA;color:#EA580C;">
+      <span class="material-symbols-outlined" style="font-size:.9rem;">check_circle</span> 1단계: AI 분석 완료
+    </div>
+    <div id="step2-badge" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold" style="background:#f3f4f5;border:1.5px solid #e5e7eb;color:#94a3b8;border-left:none;">
+      <span class="material-symbols-outlined" style="font-size:.9rem;">how_to_reg</span> 2단계: 1차 합격자 선택
+    </div>
+    <div id="step3-badge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-r-full text-xs font-bold" style="background:#f3f4f5;border:1.5px solid #e5e7eb;color:#94a3b8;border-left:none;">
+      <span class="material-symbols-outlined" style="font-size:.9rem;">send</span> 3단계: 합격 통보 발송
+    </div>
+  </div>
+  <div class="flex items-baseline justify-between mb-4">
+    <h3 class="text-base font-extrabold font-headline text-slate-900">적합도 리스트 (LLM 판정)</h3>
+    <p id="results-meta" class="text-xs text-slate-400"></p>
+  </div>
+  <ol id="result-list" class="space-y-3 list-none p-0 m-0"></ol>
+
+  <!-- 2단계: 합격자 선택 후 발송 버튼 -->
+  <div id="send-panel" class="hidden mt-6 p-5 rounded-2xl" style="background:#F0FDF4;border:1.5px solid #BBF7D0;">
+    <h3 class="text-sm font-extrabold text-green-800 mb-3">✅ 합격 통보 발송</h3>
+    <p class="text-xs text-green-700 mb-4" id="selected-count-msg"></p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="text-xs font-bold text-gray-700 block mb-1">발신 이메일 (SMTP)</label>
+        <input id="notify-from-email" type="email" placeholder="hr@company.com"
+               class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#86EFAC;">
+      </div>
+      <div>
+        <label class="text-xs font-bold text-gray-700 block mb-1">이메일 제목</label>
+        <input id="notify-subject" type="text" value="[채용] 1차 면접 합격 안내"
+               class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#86EFAC;">
+      </div>
+    </div>
+    <div class="mb-4">
+      <label class="text-xs font-bold text-gray-700 block mb-1">이메일 본문 템플릿</label>
+      <textarea id="notify-body" rows="5" class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#86EFAC;">안녕하세요, {이름}님.
+
+귀하의 지원에 감사드립니다.
+검토 결과, 1차 면접 합격을 축하드립니다.
+
+일정 조율을 위해 아래 연락처로 연락 부탁드립니다.
+HR팀 드림</textarea>
+    </div>
+    <!-- 카카오톡 -->
+    <div class="p-4 rounded-xl mb-4" style="background:rgba(254,229,86,0.15);border:1.5px solid #F0C040;">
+      <h4 class="text-xs font-bold mb-2" style="color:#886B00;">📱 카카오톡 알림 (선택)</h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">카카오 REST API 키</label>
+          <input id="kakao-api-key" type="password" placeholder="카카오 REST API 키 입력"
+                 class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#F0C040;">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">카카오 메시지 내용</label>
+          <input id="kakao-msg" type="text" value="[채용알림] 1차 면접 합격을 축하드립니다!"
+                 class="w-full border rounded-xl px-3 py-2 text-sm" style="border-color:#F0C040;">
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="sendNotifications('email')"
+              class="flex-1 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 text-white"
+              style="background:linear-gradient(135deg,#0d9488,#0f766e);">
+        <span class="material-symbols-outlined" style="font-size:.95rem;">mail</span>이메일 발송
+      </button>
+      <button onclick="sendNotifications('kakao')"
+              class="flex-1 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+              style="background:#FEE500;color:#3A1D1D;border:1.5px solid #F0C040;">
+        💬 카카오톡 발송
+      </button>
+    </div>
+    <div id="send-result-msg" class="mt-3 text-sm hidden"></div>
+  </div>
+</section>
       </div>
     </div>
 
@@ -869,6 +938,12 @@
       const li = document.createElement('li');
       li.innerHTML = `
         <div class="result-card">
+          <label class="flex items-center gap-2 mb-3 cursor-pointer select-none">
+            <input type="checkbox" class="pass-checkbox rounded" data-name="${escHtml(row.display_name || row.filename)}"
+                   data-score="${score}" onchange="updatePassSelection()">
+            <span class="text-xs font-bold text-gray-600">1차 합격자로 선택</span>
+            ${score >= 60 ? '<span class="text-xs font-bold text-green-600 ml-1">★ AI 추천</span>' : ''}
+          </label>
           <div class="flex items-start justify-between gap-4 mb-3">
             <div>
               <h4 class="font-extrabold text-slate-900 text-base font-headline mb-0.5">${escHtml(row.display_name || row.filename)}</h4>
@@ -988,6 +1063,68 @@
   // Check health on page load (non-blocking, for global badge)
   checkHealth();
 })();
+
+window.updatePassSelection = function() {
+  const checked = document.querySelectorAll('.pass-checkbox:checked');
+  const panel = document.getElementById('send-panel');
+  const msg = document.getElementById('selected-count-msg');
+  const step2 = document.getElementById('step2-badge');
+  const step3 = document.getElementById('step3-badge');
+  if (checked.length > 0) {
+    panel.classList.remove('hidden');
+    msg.textContent = `${checked.length}명 선택됨 — 이메일 또는 카카오톡으로 합격 통보를 발송합니다`;
+    step2.style.cssText = 'background:#FFF7ED;border:1.5px solid #FED7AA;color:#EA580C;border-left:none;display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:.75rem;font-weight:700;';
+    step3.style.cssText = 'background:#F0FDF4;border:1.5px solid #BBF7D0;color:#16a34a;border-left:none;display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:.75rem;font-weight:700;border-radius:0 100px 100px 0;';
+  } else {
+    panel.classList.add('hidden');
+  }
+};
+
+window.sendNotifications = async function(type) {
+  const checked = Array.from(document.querySelectorAll('.pass-checkbox:checked'));
+  if (!checked.length) { alert('합격자를 선택해주세요'); return; }
+  const names = checked.map(cb => cb.dataset.name);
+  const resultEl = document.getElementById('send-result-msg');
+
+  if (type === 'email') {
+    const from = document.getElementById('notify-from-email').value;
+    const subject = document.getElementById('notify-subject').value;
+    const body = document.getElementById('notify-body').value;
+    if (!from) { alert('발신 이메일을 입력해주세요'); return; }
+    try {
+      resultEl.classList.remove('hidden');
+      resultEl.style.color = '#0d9488';
+      resultEl.textContent = '발송 중…';
+      const res = await fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'email', candidates: names, from_email: from, subject, body })
+      });
+      const d = await res.json();
+      resultEl.textContent = d.ok ? `✅ ${d.sent}명에게 이메일 발송 완료` : `❌ ${d.error}`;
+    } catch(e) {
+      resultEl.textContent = '❌ 발송 실패: ' + e.message;
+    }
+  } else {
+    const apiKey = document.getElementById('kakao-api-key').value;
+    const msg = document.getElementById('kakao-msg').value;
+    if (!apiKey) { alert('카카오 REST API 키를 입력해주세요'); return; }
+    try {
+      resultEl.classList.remove('hidden');
+      resultEl.style.color = '#886B00';
+      resultEl.textContent = '카카오톡 발송 중…';
+      const res = await fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'kakao', candidates: names, kakao_api_key: apiKey, message: msg })
+      });
+      const d = await res.json();
+      resultEl.textContent = d.ok ? `💬 카카오톡 발송 완료 (${d.sent}명)` : `❌ ${d.error}`;
+    } catch(e) {
+      resultEl.textContent = '❌ 발송 실패: ' + e.message;
+    }
+  }
+};
 </script>
 
 </body>
