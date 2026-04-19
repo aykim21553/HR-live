@@ -1217,7 +1217,7 @@ function renderPool(){
         </div>
         <div class="flex items-center gap-2">
           <span class="font-bold text-orange-600 text-sm">$${d.rate}/h</span>
-          <button onclick="removeDev('${d.id}')" class="text-xs text-red-400 hover:text-red-600 ml-auto" title="풀에서 제거">✕ 제거</button>
+          <button onclick="removeDev('${d.id}')" style="background:#FEE2E2;color:#DC2626;border:1.5px solid #FECACA;border-radius:8px;padding:3px 10px;font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='#DC2626';this.style.color='#fff';" onmouseout="this.style.background='#FEE2E2';this.style.color='#DC2626';" title="풀에서 제거">✕ 제거</button>
         </div>
       </div>
       <p class="text-xs text-gray-500 mb-2">경력 ${d.yrs}년 &nbsp;|&nbsp; OPIc <strong>${ENG_OPIC[d.eng]||d.eng}</strong> &nbsp;|&nbsp; ${d.lead?'리더십 있음':'—'} &nbsp;|&nbsp; ${avail_txt}</p>
