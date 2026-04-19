@@ -1188,7 +1188,7 @@ function renderPool(){
   const heatEl=document.getElementById('g-heatmap');
   if(devs.length===0){heatEl.innerHTML='<p class="text-sm text-gray-400 text-center py-4">검색 결과 없음</p>';document.getElementById('g-dev-list').innerHTML='';return;}
   let htm=`<table class="heatmap-table"><thead><tr><th>개발자</th>${topSkills.map(s=>`<th>${s}</th>`).join('')}</tr></thead><tbody>`;
-  devs.slice(0,15).forEach(d=>{
+  devs.forEach(d=>{
     htm+=`<tr><td style="font-weight:600;padding:3px 8px;white-space:nowrap;">${d.name}</td>`;
     topSkills.forEach(sk=>{
       const v=d.skills[sk]||0;
