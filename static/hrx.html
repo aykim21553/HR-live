@@ -123,7 +123,7 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
           style="font-family:'Plus Jakarta Sans',sans-serif;">
         HR <span style="background:linear-gradient(135deg,#C2410C,#F97316,#FB923C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Intelligent</span> Tools
       </h1>
-      <p class="text-sm" style="color:#92400E;opacity:.8;">Feedback Vocabulary · 연봉 Analytics · Global HR Pool</p>
+      <p class="text-sm" style="color:#92400E;opacity:.8;">Feedback Vocabulary · Global HR Pool</p>
     </div>
   </section>
 
@@ -274,6 +274,7 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
       <div class="flex gap-2 mb-5">
         <button class="stab-btn active" data-stab="gpool" onclick="switchGstab('gpool')">👥 인재 Pool 탐색</button>
         <button class="stab-btn" data-stab="gmatch" onclick="switchGstab('gmatch')">🎯 프로젝트 매칭 추천</button>
+        <button class="stab-btn" data-stab="gcreate" onclick="switchGstab('gcreate')">✏️ 직접 만들기</button>
       </div>
 
       <!-- Pool 탐색 -->
@@ -281,11 +282,20 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
         <!-- Region summary -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5" id="g-region-cards"></div>
         <!-- Charts -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-          <div class="feat-card"><h3 class="text-sm font-bold text-gray-700 mb-3">지역별 인원 분포</h3><canvas id="ch-g-pie" height="160"></canvas></div>
-          <div class="feat-card"><h3 class="text-sm font-bold text-gray-700 mb-3">지역별 평균 시급 (USD/h)</h3><canvas id="ch-g-rate" height="160"></canvas></div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+          <div class="feat-card lg:col-span-1">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">지역별 인원 분포</h3>
+            <div style="max-height:160px;"><canvas id="ch-g-pie" height="140"></canvas></div>
+          </div>
+          <div class="feat-card lg:col-span-2">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">지역별 평균 시급 (USD/h)</h3>
+            <div style="max-height:160px;"><canvas id="ch-g-rate" height="130"></canvas></div>
+          </div>
         </div>
-        <div class="feat-card mb-5"><h3 class="text-sm font-bold text-gray-700 mb-3">전문분야별 인원 수</h3><canvas id="ch-g-spec" height="130"></canvas></div>
+        <div class="feat-card mb-5">
+          <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">전문분야별 인원 수</h3>
+          <div style="max-height:110px;"><canvas id="ch-g-spec" height="100"></canvas></div>
+        </div>
         <!-- Resume Upload -->
         <div class="feat-card mb-5" style="border-color:#BBF7D0;">
           <div class="flex items-center gap-2 mb-3">
@@ -308,6 +318,36 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
           <div id="resume-match-result" class="hidden">
             <p class="text-xs font-bold text-gray-700 mb-2">업로드 후보자 vs Pool 개발자 — 스킬 키워드 매칭</p>
             <div id="resume-match-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
+          </div>
+          <div class="mt-3">
+            <button onclick="toggleAddForm()" class="text-xs font-bold px-3 py-1.5 rounded-lg border" style="border-color:#FED7AA;color:#EA580C;background:#FFF7ED;">
+              ✚ 새 멤버 직접 추가
+            </button>
+            <div id="add-member-form" class="hidden mt-3 p-4 rounded-xl" style="background:#FFFBF5;border:1.5px solid #FED7AA;">
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+                <div><label class="ox-label">이름 *</label><input id="nm-name" class="ox-input" placeholder="Kim Chul Soo"/></div>
+                <div><label class="ox-label">지역 *</label>
+                  <select id="nm-region" class="ox-select">
+                    <option>Vietnam</option><option>Abu Dhabi</option><option>USA</option><option>Indonesia</option>
+                  </select>
+                </div>
+                <div><label class="ox-label">역할 *</label><input id="nm-role" class="ox-input" placeholder="Frontend Developer"/></div>
+                <div><label class="ox-label">경력 (년) *</label><input id="nm-yrs" class="ox-input" type="number" min="0" max="30" placeholder="3"/></div>
+                <div><label class="ox-label">시간별 급여 (USD/h) *</label><input id="nm-rate" class="ox-input" type="number" min="10" max="300" placeholder="25"/></div>
+                <div><label class="ox-label">영어 역량 *</label>
+                  <select id="nm-eng" class="ox-select">
+                    <option>A2</option><option>B1</option><option selected>B2</option><option>C1</option><option>Native</option>
+                  </select>
+                </div>
+                <div><label class="ox-label">전문분야</label><input id="nm-spec" class="ox-input" placeholder="Web UI"/></div>
+                <div><label class="ox-label">스킬 (쉼표 구분, 숫자:점수)</label><input id="nm-skills" class="ox-input" placeholder="React:85,TypeScript:80"/></div>
+                <div><label class="ox-label">투입 가능 (주 후)</label><input id="nm-avail" class="ox-input" type="number" min="0" max="52" value="2"/></div>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="addMember()" class="grad-btn px-4 py-2 rounded-xl text-sm font-bold">Pool에 추가</button>
+                <button onclick="toggleAddForm()" class="px-4 py-2 rounded-xl text-sm font-bold border" style="border-color:#E7E5E4;color:#78716C;">취소</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -336,6 +376,17 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
                 <option value="7">7년+</option><option value="10">10년+</option>
               </select>
             </div>
+            <div>
+              <label class="ox-label">영어 역량 (최소)</label>
+              <select id="g-filter-eng" class="ox-select" onchange="renderPool()">
+                <option value="">전체</option>
+                <option value="A2">A2 이상</option>
+                <option value="B1">B1 이상</option>
+                <option value="B2">B2 이상</option>
+                <option value="C1">C1 이상</option>
+                <option value="Native">Native만</option>
+              </select>
+            </div>
             <div class="flex items-end">
               <label class="flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700">
                 <input type="checkbox" id="g-filter-avail" onchange="renderPool()" class="rounded">
@@ -347,7 +398,20 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
         </div>
         <!-- Heatmap -->
         <div class="feat-card mb-5">
-          <h3 class="text-sm font-bold text-gray-700 mb-3">기술 역량 히트맵 (필터 결과 상위 스킬)</h3>
+          <div class="flex items-center gap-2 mb-3">
+            <h3 class="text-sm font-bold text-gray-700">기술 역량 히트맵 (필터 결과 상위 스킬)</h3>
+            <button onclick="toggleHeatmapInfo()" class="text-xs px-2 py-0.5 rounded-full border font-bold" style="color:#EA580C;border-color:#FED7AA;background:#FFF7ED;">? 점수 기준</button>
+          </div>
+          <div id="heatmap-info" class="hidden mb-3 p-3 rounded-xl text-xs" style="background:#FFF7ED;border:1px solid #FED7AA;">
+            <p class="font-bold text-orange-700 mb-2">📊 기술 역량 점수 측정 기준</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div class="text-center p-2 rounded-lg" style="background:rgba(234,88,12,.8);color:#fff;"><div class="font-bold text-base">90+</div><div>전문가 (Expert)</div><div class="text-xs opacity-80">상용 서비스 설계 가능</div></div>
+              <div class="text-center p-2 rounded-lg" style="background:rgba(249,115,22,.6);color:#fff;"><div class="font-bold text-base">80~89</div><div>숙련 (Proficient)</div><div class="text-xs opacity-80">독립적 개발 가능</div></div>
+              <div class="text-center p-2 rounded-lg" style="background:rgba(253,186,116,.5);color:#1C1917;"><div class="font-bold text-base">70~79</div><div>능숙 (Advanced)</div><div class="text-xs opacity-80">실무 활용 가능</div></div>
+              <div class="text-center p-2 rounded-lg" style="background:#FFF7ED;color:#78716C;border:1px solid #FED7AA;"><div class="font-bold text-base">~69</div><div>기초 (Basic)</div><div class="text-xs opacity-80">보조적 활용 수준</div></div>
+            </div>
+            <p class="text-gray-500 mt-2">※ 점수는 개발자의 실제 프로젝트 경험, 인증, 전문분야를 반영하여 원본 HR X 데이터베이스 기준으로 평가된 값입니다.</p>
+          </div>
           <div class="heatmap-wrap" id="g-heatmap"></div>
         </div>
         <!-- Dev list -->
@@ -366,16 +430,19 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
             <div id="gm-proj-info" class="p-4 rounded-xl text-sm" style="background:#FFF7ED;border:1.5px solid #FED7AA;"></div>
           </div>
         </div>
-        <!-- A/B/전체 tabs -->
+        <!-- Fit 점수 설명 -->
+        <div class="p-3 rounded-xl mb-4 text-xs" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#1e40af;">
+          <strong>📐 적합도(Fit) 스코어링 방식:</strong>
+          필수스킬 충족률(45%) + 우대스킬 충족률(20%) + 투입 가능성(15%) + 영어역량(10%) + 리더십(10%) 의 가중합산으로 계산됩니다.
+        </div>
+        <!-- A/전체 tabs -->
         <div class="flex gap-2 mb-4">
           <button class="stab-btn active" data-stab="ma" onclick="switchMatchTab('ma')">🏆 A팀 추천 (Fit 상위 5명)</button>
-          <button class="stab-btn" data-stab="mb" onclick="switchMatchTab('mb')">🔄 B팀 대안 (리스크 최소 5명)</button>
           <button class="stab-btn" data-stab="mall" onclick="switchMatchTab('mall')">📊 전체 분포 분석</button>
         </div>
         <div id="mtab-ma"><div id="gm-a-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div></div>
-        <div id="mtab-mb" class="hidden"><div id="gm-b-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div></div>
         <div id="mtab-mall" class="hidden">
-          <div class="feat-card mb-5"><h3 class="text-sm font-bold text-gray-700 mb-3">전체 후보 — Fit Score vs Risk Score</h3><canvas id="ch-match-scatter" height="220"></canvas></div>
+          <div class="feat-card mb-5"><h3 class="text-sm font-bold text-gray-700 mb-3">Fit Score 분포 분석</h3><canvas id="ch-match-scatter" height="220"></canvas></div>
           <div class="feat-card"><div class="overflow-x-auto"><table class="w-full text-sm" id="match-all-tbl">
             <thead><tr class="border-b border-gray-100">
               <th class="text-left py-2 px-3 text-xs font-bold text-gray-500">이름</th>
@@ -383,13 +450,116 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
               <th class="text-left py-2 px-3 text-xs font-bold text-gray-500">역할</th>
               <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">경력</th>
               <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">Fit%</th>
-              <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">Risk%</th>
               <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">필수스킬%</th>
               <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">투입(주)</th>
               <th class="text-right py-2 px-3 text-xs font-bold text-gray-500">시급($)</th>
             </tr></thead>
             <tbody id="match-all-tbody"></tbody>
           </table></div></div>
+        </div>
+      <!-- 프로젝트 직접 만들기 -->
+      <div id="gstab-gcreate" class="hidden">
+        <div class="feat-card mb-4">
+          <h3 class="text-sm font-bold text-gray-700 mb-4">✏️ 프로젝트 직접 만들기</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="ox-label">프로젝트명 *</label>
+              <input id="cp-name" class="ox-input" placeholder="예: 글로벌 주식 거래 플랫폼 구축"/>
+            </div>
+            <div>
+              <label class="ox-label">프로젝트 유형</label>
+              <select id="cp-type" class="ox-select">
+                <option>Web</option><option>Mobile</option><option>AI/ML</option>
+                <option>Fintech</option><option>Data</option><option>DevOps</option><option>Enterprise</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="ox-label">프로젝트 설명 *</label>
+            <textarea id="cp-desc" class="ox-textarea" rows="3" placeholder="예: 실시간 주식 데이터 수집 및 글로벌 투자자 간 정보 교환 플랫폼을 신규 개발합니다. React 기반 대시보드와 Python FastAPI 백엔드를 활용합니다."></textarea>
+          </div>
+          <div class="mb-4">
+            <label class="ox-label">필요 기술 (자유롭게 입력 — AI가 필수/우대로 자동 분류) *</label>
+            <textarea id="cp-skills-raw" class="ox-textarea" rows="3"
+              placeholder="예: React, Python, FastAPI, PostgreSQL, Docker, Redis, TypeScript, WebSocket, AWS. 실시간 데이터 처리와 핀테크 경험이 있으면 좋겠습니다."></textarea>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div>
+              <label class="ox-label">팀 규모 (명)</label>
+              <input id="cp-team" class="ox-input" type="number" min="1" max="20" value="4"/>
+            </div>
+            <div>
+              <label class="ox-label">기간 (개월)</label>
+              <input id="cp-months" class="ox-input" type="number" min="1" max="36" value="4"/>
+            </div>
+            <div>
+              <label class="ox-label">착수 (주 이내)</label>
+              <input id="cp-start" class="ox-input" type="number" min="0" max="52" value="2"/>
+            </div>
+            <div>
+              <label class="ox-label">최소 영어</label>
+              <select id="cp-eng" class="ox-select">
+                <option>A2</option><option selected>B1</option><option>B2</option><option>C1</option>
+              </select>
+            </div>
+          </div>
+          <button id="cp-ai-btn" onclick="classifyProjectSkills()" class="grad-btn w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined" style="font-size:1rem;">auto_awesome</span>
+            AI 스킬 분류 + 추천 팀 구성
+          </button>
+        </div>
+
+        <!-- AI 분류 결과 -->
+        <div id="cp-result" class="hidden">
+          <div class="feat-card mb-4" style="border-color:#BBF7D0;">
+            <h4 class="text-sm font-bold text-gray-700 mb-3">🤖 AI 분류 결과 (수정 가능)</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+              <div>
+                <label class="ox-label text-green-700">✅ 필수 스킬</label>
+                <input id="cp-required" class="ox-input" style="border-color:#86EFAC;"/>
+              </div>
+              <div>
+                <label class="ox-label text-blue-700">⭐ 우대 스킬</label>
+                <input id="cp-preferred" class="ox-input" style="border-color:#93C5FD;"/>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-gray-500 mb-3">
+              <span>🗓️ AI 권장 기간:</span>
+              <span id="cp-ai-months" class="font-bold text-orange-600"></span>
+              <span class="ml-3">👥 AI 권장 팀:</span>
+              <span id="cp-ai-team" class="font-bold text-orange-600"></span>
+            </div>
+            <button onclick="runCustomMatch()" class="grad-btn px-6 py-2 rounded-xl font-bold text-sm flex items-center gap-2">
+              🎯 이 프로젝트로 팀 추천
+            </button>
+          </div>
+
+          <!-- 팀 추천 결과 + 선택 -->
+          <div id="cp-match-result" class="hidden">
+            <div class="feat-card mb-4">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-sm font-bold text-gray-700">추천 팀원 선택</h4>
+                <div class="text-xs text-gray-500">선택한 팀원의 총 예산이 자동 산출됩니다</div>
+              </div>
+              <div id="cp-candidates" class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4"></div>
+              <!-- 예산 산출 -->
+              <div id="cp-budget-box" class="p-4 rounded-xl" style="background:#F0FDF4;border:1.5px solid #BBF7D0;">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-bold text-green-800">💰 예산 자동 산출</span>
+                  <div class="text-xs text-gray-500">시급 × 160h/월 × 프로젝트 기간</div>
+                </div>
+                <div id="cp-budget-detail" class="text-xs text-gray-600 mb-2"></div>
+                <div class="flex items-baseline gap-2">
+                  <span class="text-2xl font-extrabold text-green-700" id="cp-total-budget">$0</span>
+                  <span class="text-sm text-gray-500" id="cp-budget-note"></span>
+                </div>
+              </div>
+            </div>
+            <button onclick="downloadProjectDocx()" class="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 text-white mb-6" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);">
+              <span class="material-symbols-outlined" style="font-size:.95rem;">download</span>
+              Word 다운로드 — 프로젝트 개요 + 팀원 이력 요약
+            </button>
+          </div>
         </div>
       </div>
 
@@ -410,7 +580,7 @@ const CHART_COLORS = ['#F97316','#3B82F6','#10B981','#8B5CF6','#EF4444','#EC4899
 // ════════════════════════════════════════════
 // DEVELOPER DATA  (원본 app.py 동일)
 // ════════════════════════════════════════════
-const DEVS = [
+let DEVS_POOL = [
   // Vietnam
   {id:'VN001',name:'Nguyen Van An',   region:'Vietnam',  role:'Frontend Developer',   yrs:5, skills:{React:90,TypeScript:85,'Vue.js':70,'CSS/Tailwind':80,'Next.js':65},          eng:'B2',avail:2, lead:false,rate:25, spec:'Web UI',      certs:['AWS Cloud Practitioner'],  projs:['이커머스 UI','물류 대시보드']},
   {id:'VN002',name:'Tran Thi Bich',   region:'Vietnam',  role:'Frontend Developer',   yrs:3, skills:{React:75,JavaScript:80,'HTML/CSS':90,Redux:60,Figma:70},                      eng:'B1',avail:0, lead:false,rate:20, spec:'Web UI',      certs:[],                          projs:['관리자 포털','CMS 프론트']},
@@ -463,9 +633,11 @@ const DEVS = [
 ];
 
 const PROJECTS = [
-  {id:'PRJ001',name:'글로벌 이커머스 플랫폼 구축',desc:'동남아시아 대상 멀티벤더 이커머스 플랫폼 신규 개발',
-   required:['React','Node.js','PostgreSQL','Docker'],preferred:['TypeScript','Redis','AWS','Microservices'],
-   team:5,months:6,start_weeks:2,needs_lead:true,min_eng:'B1',type:'Web'},
+  {id:'PRJ001',name:'글로벌 주식 정보 교환 플랫폼 구축',
+   desc:'실시간 글로벌 주식 데이터 수집·분석·교환 플랫폼 신규 개발 (한화투자증권 핀테크)',
+   required:['Python','FastAPI','WebSocket','PostgreSQL'],
+   preferred:['Redis','Docker','AWS','TypeScript','React'],
+   team:4,months:5,start_weeks:2,needs_lead:true,min_eng:'B1',type:'Fintech'},
   {id:'PRJ002',name:'모바일 뱅킹 앱 (iOS/Android)',desc:'핀테크 스타트업 모바일 뱅킹 앱 신규 개발',
    required:['Flutter','Dart','Firebase','REST API'],preferred:['Payment Gateway','Security','Kotlin'],
    team:4,months:5,start_weeks:4,needs_lead:true,min_eng:'B1',type:'Mobile'},
@@ -902,20 +1074,20 @@ async function requestSalaryAI(){
 // GLOBAL HR
 // ════════════════════════════════════════════
 function switchGstab(name){
-  ['gpool','gmatch'].forEach(n=>{
+  ['gpool','gmatch','gcreate'].forEach(n=>{
     document.getElementById('gstab-'+n).classList[n===name?'remove':'add']('hidden');
   });
-  document.querySelectorAll('[data-stab="gpool"],[data-stab="gmatch"]').forEach(b=>{
+  document.querySelectorAll('[data-stab="gpool"],[data-stab="gmatch"],[data-stab="gcreate"]').forEach(b=>{
     b.classList[b.dataset.stab===name?'add':'remove']('active');
   });
   if(name==='gmatch')runMatch();
 }
 
 function switchMatchTab(name){
-  ['ma','mb','mall'].forEach(n=>{
+  ['ma','mall'].forEach(n=>{
     document.getElementById('mtab-'+n).classList[n===name?'remove':'add']('hidden');
   });
-  document.querySelectorAll('[data-stab="ma"],[data-stab="mb"],[data-stab="mall"]').forEach(b=>{
+  document.querySelectorAll('[data-stab="ma"],[data-stab="mall"]').forEach(b=>{
     b.classList[b.dataset.stab===name?'add':'remove']('active');
   });
   if(name==='mall')renderMatchScatter();
@@ -926,7 +1098,8 @@ function initGlobal(){
   const regions=['Vietnam','Abu Dhabi','USA','Indonesia'];
   const regCards=document.getElementById('g-region-cards');
   regCards.innerHTML=regions.map(r=>{
-    const ds=DEVS.filter(d=>d.region===r);
+    const ds=DEVS_POOL.filter(d=>d.region===r);
+    if(!ds.length) return '';
     const avgYr=(ds.reduce((s,d)=>s+d.yrs,0)/ds.length).toFixed(1);
     const flag=REGION_FLAG[r]||'🌐';
     return`<div class="metric-card text-center">
@@ -936,30 +1109,35 @@ function initGlobal(){
   }).join('');
 
   // spec filter
-  const specs=[...new Set(DEVS.map(d=>d.spec))].sort();
+  const specs=[...new Set(DEVS_POOL.map(d=>d.spec))].sort();
   const specSel=document.getElementById('g-filter-spec');
   specs.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;specSel.appendChild(o);});
 
   // pie chart
-  const regCount=regions.map(r=>DEVS.filter(d=>d.region===r).length);
+  const regCount=regions.map(r=>DEVS_POOL.filter(d=>d.region===r).length);
   new Chart(document.getElementById('ch-g-pie'),{
     type:'doughnut',
-    data:{labels:regions,datasets:[{data:regCount,backgroundColor:regions.map(r=>REGION_COLOR[r]),borderWidth:2}]},
-    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}}
+    data:{labels:regions,datasets:[{data:regCount,backgroundColor:regions.map(r=>REGION_COLOR[r]),borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:true,cutout:'65%',
+      plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:10},padding:8}}}}
   });
-  // rate bar
-  const avgRate=regions.map(r=>{const ds=DEVS.filter(d=>d.region===r);return+(ds.reduce((s,d)=>s+d.rate,0)/ds.length).toFixed(0);});
+  // rate bar - horizontal
+  const avgRate=regions.map(r=>{const ds=DEVS_POOL.filter(d=>d.region===r);return ds.length?+(ds.reduce((s,d)=>s+d.rate,0)/ds.length).toFixed(0):0;});
   new Chart(document.getElementById('ch-g-rate'),{
     type:'bar',
-    data:{labels:regions,datasets:[{label:'평균 시급($)',data:avgRate,backgroundColor:regions.map(r=>REGION_COLOR[r]),borderRadius:6}]},
-    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:'USD/h'}}}}
+    data:{labels:regions,datasets:[{label:'USD/h',data:avgRate,backgroundColor:regions.map(r=>REGION_COLOR[r]+'cc'),borderRadius:6,borderWidth:0}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:10}}}}}
   });
-  // spec bar
-  const specCount=specs.map(s=>DEVS.filter(d=>d.spec===s).length);
+  // spec bar - 작게
+  const specCount=specs.map(s=>DEVS_POOL.filter(d=>d.spec===s).length);
   new Chart(document.getElementById('ch-g-spec'),{
     type:'bar',
-    data:{labels:specs,datasets:[{label:'인원',data:specCount,backgroundColor:CHART_COLORS,borderRadius:4}]},
-    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+    data:{labels:specs,datasets:[{data:specCount,backgroundColor:CHART_COLORS.map(c=>c+'cc'),borderRadius:4,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'#f5f5f4'},ticks:{font:{size:9}}}}}
   });
 
   // project select
@@ -975,11 +1153,14 @@ function getFilteredDevs(){
   const spec=document.getElementById('g-filter-spec').value;
   const minYr=parseInt(document.getElementById('g-filter-yr').value)||0;
   const availOnly=document.getElementById('g-filter-avail').checked;
-  return DEVS.filter(d=>
+  const minEng=document.getElementById('g-filter-eng').value;
+  const engOrder={A2:1,B1:2,B2:3,C1:4,Native:5};
+  return DEVS_POOL.filter(d=>
     (!region||d.region===region)&&
     (!spec||d.spec===spec)&&
     d.yrs>=minYr&&
-    (!availOnly||d.avail===0)
+    (!availOnly||d.avail===0)&&
+    (!minEng||(engOrder[d.eng]||0)>=(engOrder[minEng]||0))
   );
 }
 
@@ -1020,7 +1201,10 @@ function renderPool(){
           <span class="tag ml-1 text-white" style="background:${clr};">${d.region}</span>
           <span class="tag" style="background:#e8eaf6;color:#3f51b5;">${d.role}</span>
         </div>
-        <span class="font-bold text-orange-600 text-sm">$${d.rate}/h</span>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-orange-600 text-sm">$${d.rate}/h</span>
+          <button onclick="removeDev('${d.id}')" class="text-xs text-red-400 hover:text-red-600 ml-auto" title="풀에서 제거">✕ 제거</button>
+        </div>
       </div>
       <p class="text-xs text-gray-500 mb-2">경력 ${d.yrs}년 &nbsp;|&nbsp; 영어 ${d.eng} &nbsp;|&nbsp; ${d.lead?'리더십 있음':'—'} &nbsp;|&nbsp; ${avail_txt}</p>
       <div class="mb-2">${skills_str}</div>
@@ -1056,11 +1240,9 @@ function runMatch(){
      <p class="text-xs"><span class="font-semibold">필수:</span> ${proj.required.join(', ')}</p>
      <p class="text-xs"><span class="font-semibold">우대:</span> ${proj.preferred.join(', ')}</p>
      <p class="text-xs mt-1">${proj.months}개월 · ${proj.team}명 · ${proj.start_weeks}주 이내 착수 · 영어 ${proj.min_eng}+</p>`;
-  const scored=DEVS.map(d=>scoreDev(d,proj)).sort((a,b)=>b.fit-a.fit);
+  const scored=DEVS_POOL.map(d=>scoreDev(d,proj)).sort((a,b)=>b.fit-a.fit);
   window._scored=scored;
-  const byRisk=[...scored].sort((a,b)=>a.risk-b.risk);
   renderMatchCards('gm-a-cards',scored.slice(0,5),proj,true);
-  renderMatchCards('gm-b-cards',byRisk.slice(0,5),proj,false);
   renderMatchTable(scored);
 }
 
@@ -1106,7 +1288,6 @@ function renderMatchTable(scored){
       <td class="py-2 px-3 text-gray-500 text-xs">${d.role}</td>
       <td class="py-2 px-3 text-right text-gray-600">${d.yrs}년</td>
       <td class="py-2 px-3 text-right font-bold" style="color:${fc}">${d.fit}%</td>
-      <td class="py-2 px-3 text-right text-gray-600">${d.risk}%</td>
       <td class="py-2 px-3 text-right text-gray-600">${d.reqMatchPct}%</td>
       <td class="py-2 px-3 text-right text-gray-600">${d.avail}주</td>
       <td class="py-2 px-3 text-right text-gray-600">$${d.rate}</td>
@@ -1119,24 +1300,220 @@ function renderMatchScatter(){
   const scored=window._scored;
   if(!scored.length)return;
   const regions=['Vietnam','Abu Dhabi','USA','Indonesia'];
-  const datasets=regions.map(r=>({
-    label:r,
-    data:scored.filter(d=>d.region===r).map(d=>({x:d.fit,y:d.risk,label:d.name})),
-    backgroundColor:REGION_COLOR[r]+'aa',pointRadius:7
-  }));
   _matchChart=new Chart(document.getElementById('ch-match-scatter'),{
-    type:'scatter',data:{datasets},
-    options:{responsive:true,
+    type:'scatter',
+    data:{datasets:regions.map(r=>({
+      label:r,
+      data:scored.filter(d=>d.region===r).map(d=>({x:d.fit,y:d.rate,label:d.name})),
+      backgroundColor:REGION_COLOR[r]+'aa',pointRadius:7
+    }))},
+    options:{
+      responsive:true,
       plugins:{
         legend:{position:'bottom',labels:{boxWidth:10,font:{size:11}}},
-        tooltip:{callbacks:{label:ctx=>`${ctx.raw.label}: Fit ${ctx.parsed.x}% / Risk ${ctx.parsed.y}%`}}
+        tooltip:{callbacks:{label:ctx=>`${ctx.raw.label}: Fit ${ctx.parsed.x}% / $${ctx.parsed.y}/h`}}
       },
       scales:{
         x:{title:{display:true,text:'적합도 점수 (Fit %)'},min:0,max:100},
-        y:{title:{display:true,text:'리스크 점수 (Risk %)'},min:0,max:100}
+        y:{title:{display:true,text:'시급 (USD/h)'},min:0}
       }
     }
   });
+}
+
+function toggleHeatmapInfo() {
+  document.getElementById('heatmap-info').classList.toggle('hidden');
+}
+
+function toggleAddForm() {
+  const f = document.getElementById('add-member-form');
+  f.classList.toggle('hidden');
+}
+
+function addMember() {
+  const name = document.getElementById('nm-name').value.trim();
+  const rate = parseInt(document.getElementById('nm-rate').value) || 0;
+  if (!name) { alert('이름을 입력해주세요'); return; }
+  if (!rate) { alert('시간별 급여를 입력해주세요'); return; }
+  const skillsRaw = document.getElementById('nm-skills').value;
+  const skills = {};
+  skillsRaw.split(',').forEach(s => {
+    const [k, v] = s.trim().split(':');
+    if (k) skills[k.trim()] = parseInt(v) || 75;
+  });
+  const newDev = {
+    id: 'CUSTOM_' + Date.now(),
+    name,
+    region: document.getElementById('nm-region').value,
+    role: document.getElementById('nm-role').value || 'Developer',
+    yrs: parseInt(document.getElementById('nm-yrs').value) || 1,
+    skills,
+    eng: document.getElementById('nm-eng').value,
+    avail: parseInt(document.getElementById('nm-avail').value) || 0,
+    lead: false,
+    rate,
+    spec: document.getElementById('nm-spec').value || 'General',
+    certs: [],
+    projs: ['사용자 추가 멤버']
+  };
+  DEVS_POOL.push(newDev);
+  document.getElementById('add-member-form').classList.add('hidden');
+  // clear form
+  ['nm-name','nm-role','nm-skills','nm-spec'].forEach(id => document.getElementById(id).value = '');
+  renderPool();
+  alert(`${name}이 Pool에 추가되었습니다.`);
+}
+
+function removeDev(id) {
+  if (!confirm('이 개발자를 Pool에서 제거할까요?')) return;
+  DEVS_POOL = DEVS_POOL.filter(d => d.id !== id);
+  renderPool();
+  // region summary 재렌더
+  const regions=['Vietnam','Abu Dhabi','USA','Indonesia'];
+  const regCards=document.getElementById('g-region-cards');
+  regCards.innerHTML=regions.map(r=>{
+    const ds=DEVS_POOL.filter(d=>d.region===r);
+    if(!ds.length) return '';
+    const avgYr=(ds.reduce((s,d)=>s+d.yrs,0)/ds.length).toFixed(1);
+    return`<div class="metric-card text-center"><div class="metric-val">${REGION_FLAG[r]} ${ds.length}명</div><div class="metric-label">${r} · 평균경력 ${avgYr}년</div></div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+// PROJECT CREATE (직접 만들기)
+// ════════════════════════════════════════════
+let _customProject = null;
+let _cpScored = [];
+
+async function classifyProjectSkills() {
+  const name = document.getElementById('cp-name').value.trim();
+  const desc = document.getElementById('cp-desc').value.trim();
+  const skillsRaw = document.getElementById('cp-skills-raw').value.trim();
+  if (!name || !desc || !skillsRaw) { alert('프로젝트명, 설명, 기술을 모두 입력해주세요'); return; }
+
+  const btn = document.getElementById('cp-ai-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem;animation:spin 1s linear infinite;">autorenew</span> AI 분류 중…';
+
+  try {
+    const res = await fetch('/api/hrx/classify-project', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, desc, skills_raw: skillsRaw })
+    });
+    const data = await res.json();
+    if (data.required) {
+      document.getElementById('cp-required').value = data.required.join(', ');
+      document.getElementById('cp-preferred').value = data.preferred.join(', ');
+      document.getElementById('cp-ai-months').textContent = data.suggested_months + '개월';
+      document.getElementById('cp-ai-team').textContent = data.suggested_team + '명';
+      document.getElementById('cp-months').value = data.suggested_months;
+      document.getElementById('cp-team').value = data.suggested_team;
+      document.getElementById('cp-result').classList.remove('hidden');
+    } else {
+      alert('AI 분류 실패: ' + (data.detail || '알 수 없는 오류'));
+    }
+  } catch(e) {
+    alert('서버 오류: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem;">auto_awesome</span> AI 스킬 분류 + 추천 팀 구성';
+}
+
+function runCustomMatch() {
+  const required = document.getElementById('cp-required').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const preferred = document.getElementById('cp-preferred').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const months = parseInt(document.getElementById('cp-months').value) || 4;
+  const team = parseInt(document.getElementById('cp-team').value) || 4;
+  const startWeeks = parseInt(document.getElementById('cp-start').value) || 2;
+  const minEng = document.getElementById('cp-eng').value;
+  const needsLead = true;
+
+  _customProject = { name: document.getElementById('cp-name').value, desc: document.getElementById('cp-desc').value,
+    required, preferred, months, team, start_weeks: startWeeks, needs_lead: needsLead, min_eng: minEng };
+
+  _cpScored = DEVS_POOL.map(d => scoreDev(d, _customProject)).sort((a, b) => b.fit - a.fit);
+
+  const candidates = _cpScored.slice(0, Math.min(team * 2, DEVS_POOL.length));
+  const req = new Set(required);
+  document.getElementById('cp-candidates').innerHTML = candidates.map(d => {
+    const fc = fitColor(d.fit);
+    const chips = Object.entries(d.skills).slice(0,5).map(([k,v])=>
+      `<span class="skill-chip ${req.has(k)?'match':''}">${k}(${v})</span>`).join('');
+    return `<div class="dev-card" style="border-color:${fitColor(d.fit)}33;">
+      <label class="flex items-center gap-2 cursor-pointer mb-2">
+        <input type="checkbox" class="cp-select-cb rounded" data-id="${d.id}" data-rate="${d.rate}" data-name="${d.name}" onchange="updateProjectBudget()">
+        <span class="font-bold text-sm text-gray-900">${REGION_FLAG[d.region]||''} ${d.name}</span>
+        <span class="font-extrabold text-base ml-auto" style="color:${fc}">${d.fit}%</span>
+      </label>
+      <p class="text-xs text-gray-500 mb-1">${d.role} · ${d.yrs}년 · $${d.rate}/h · 영어 ${d.eng}</p>
+      <div class="mb-1">${chips}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('cp-match-result').classList.remove('hidden');
+  updateProjectBudget();
+}
+
+function updateProjectBudget() {
+  const checked = Array.from(document.querySelectorAll('.cp-select-cb:checked'));
+  const months = parseInt(document.getElementById('cp-months').value) || 4;
+  const HOURS_PER_MONTH = 160;
+  let total = 0;
+  const details = checked.map(cb => {
+    const rate = parseInt(cb.dataset.rate) || 0;
+    const cost = rate * HOURS_PER_MONTH * months;
+    total += cost;
+    return `${cb.dataset.name}: $${rate}/h × ${HOURS_PER_MONTH}h × ${months}개월 = $${cost.toLocaleString()}`;
+  });
+  document.getElementById('cp-budget-detail').innerHTML = details.join('<br>') || '<span class="text-gray-400">팀원을 선택하세요</span>';
+  document.getElementById('cp-total-budget').textContent = '$' + total.toLocaleString();
+  document.getElementById('cp-budget-note').textContent = checked.length ? `(${checked.length}명 · ${months}개월)` : '';
+}
+
+async function downloadProjectDocx() {
+  const checked = Array.from(document.querySelectorAll('.cp-select-cb:checked'));
+  if (!checked.length) { alert('팀원을 선택해주세요'); return; }
+  const months = parseInt(document.getElementById('cp-months').value) || 4;
+  const HOURS_PER_MONTH = 160;
+
+  const selectedDevs = checked.map(cb => {
+    const dev = DEVS_POOL.find(d => d.id === cb.dataset.id);
+    return dev;
+  }).filter(Boolean);
+
+  const totalBudget = selectedDevs.reduce((s, d) => s + d.rate * HOURS_PER_MONTH * months, 0);
+
+  let content = `프로젝트명: ${_customProject.name}\n`;
+  content += `설명: ${_customProject.desc}\n`;
+  content += `기간: ${months}개월  팀 규모: ${selectedDevs.length}명  총 예산: $${totalBudget.toLocaleString()}\n`;
+  content += `필수 스킬: ${_customProject.required.join(', ')}\n`;
+  content += `우대 스킬: ${_customProject.preferred.join(', ')}\n\n`;
+  content += `## 팀원 구성\n\n`;
+  selectedDevs.forEach(d => {
+    content += `· ${d.name} (${d.region}) — ${d.role}, 경력 ${d.yrs}년, 영어 ${d.eng}, $${d.rate}/h\n`;
+    content += `  스킬: ${Object.entries(d.skills).map(([k,v])=>`${k}(${v})`).join(', ')}\n`;
+    content += `  프로젝트 경험: ${d.projs.join(', ')}\n`;
+    content += `  투입 예정: ${d.avail}주 후  개인 예산: $${(d.rate * HOURS_PER_MONTH * months).toLocaleString()}\n\n`;
+  });
+
+  try {
+    const res = await fetch('/api/hrx/download-docx', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: _customProject.name + ' — 프로젝트 개요',
+        subtitle: `총 예산 $${totalBudget.toLocaleString()} · ${selectedDevs.length}명 · ${months}개월`,
+        content
+      })
+    });
+    if (!res.ok) { alert('Word 생성 실패'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'ProjectBrief.docx'; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { alert('다운로드 오류: ' + e.message); }
 }
 
 // ════════════════════════════════════════════

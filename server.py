@@ -1843,6 +1843,52 @@ async def hrx_feedback_direct(req: FeedbackDirectRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ── HR X: 프로젝트 스킬 분류 ─────────────────────────────────
+class ClassifyProjectRequest(BaseModel):
+    name: str
+    desc: str
+    skills_raw: str
+
+@app.post("/api/hrx/classify-project")
+async def hrx_classify_project(req: ClassifyProjectRequest):
+    """프로젝트 설명 + 자유 스킬 텍스트 → 필수/우대 분류 + 기간/팀 추천"""
+    prompt = f"""당신은 IT 프로젝트 기술 스펙 분석 전문가입니다.
+
+프로젝트명: {req.name}
+프로젝트 설명: {req.desc}
+입력된 기술/요구사항 (자유 형식): {req.skills_raw}
+
+위 정보를 분석하여 다음 JSON만 출력하세요 (다른 텍스트 절대 없음):
+{{
+  "required": ["필수스킬1", "필수스킬2", ...],
+  "preferred": ["우대스킬1", "우대스킬2", ...],
+  "suggested_months": 숫자(1~18),
+  "suggested_team": 숫자(1~10),
+  "reasoning": "한 줄 추천 근거"
+}}
+
+기준:
+- required: 프로젝트 핵심 기능 구현에 반드시 필요한 기술
+- preferred: 있으면 좋지만 없어도 되는 기술
+- suggested_months: 프로젝트 규모와 복잡도 기반 권장 기간
+- suggested_team: 필요 기술 다양성과 규모 기반 권장 인원
+"""
+    try:
+        client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        msg = client.messages.create(
+            model=CHAT_MODEL,
+            max_tokens=800,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw = msg.content[0].text
+        json_match = re.search(r"\{[\s\S]*\}", raw)
+        if json_match:
+            return json.loads(json_match.group(0))
+        return {"required": [], "preferred": [], "suggested_months": 4, "suggested_team": 4, "reasoning": ""}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ── HR X: Word(.docx) 다운로드 ────────────────────────────────
 class DocxDownloadRequest(BaseModel):
     title: str = "Feedback Vocabulary"
