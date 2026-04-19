@@ -334,9 +334,13 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
                 <div><label class="ox-label">역할 *</label><input id="nm-role" class="ox-input" placeholder="Frontend Developer"/></div>
                 <div><label class="ox-label">경력 (년) *</label><input id="nm-yrs" class="ox-input" type="number" min="0" max="30" placeholder="3"/></div>
                 <div><label class="ox-label">시간별 급여 (USD/h) *</label><input id="nm-rate" class="ox-input" type="number" min="10" max="300" placeholder="25"/></div>
-                <div><label class="ox-label">영어 역량 *</label>
+                <div><label class="ox-label">OPIc 등급 *</label>
                   <select id="nm-eng" class="ox-select">
-                    <option>A2</option><option>B1</option><option selected>B2</option><option>C1</option><option>Native</option>
+                    <option value="A2">IL (Intermediate Low)</option>
+                    <option value="B1">IM1 (Intermediate Mid 1)</option>
+                    <option value="B2" selected>IM2 (Intermediate Mid 2)</option>
+                    <option value="C1">IH (Intermediate High)</option>
+                    <option value="Native">AL (Advanced Low)</option>
                   </select>
                 </div>
                 <div><label class="ox-label">전문분야</label><input id="nm-spec" class="ox-input" placeholder="Web UI"/></div>
@@ -377,14 +381,14 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
               </select>
             </div>
             <div>
-              <label class="ox-label">영어 역량 (최소)</label>
+              <label class="ox-label">OPIc 역량 (최소)</label>
               <select id="g-filter-eng" class="ox-select" onchange="renderPool()">
                 <option value="">전체</option>
-                <option value="A2">A2 이상</option>
-                <option value="B1">B1 이상</option>
-                <option value="B2">B2 이상</option>
-                <option value="C1">C1 이상</option>
-                <option value="Native">Native만</option>
+                <option value="A2">IL 이상</option>
+                <option value="B1">IM1 이상</option>
+                <option value="B2">IM2 이상</option>
+                <option value="C1">IH 이상</option>
+                <option value="Native">AL만</option>
               </select>
             </div>
             <div class="flex items-end">
@@ -457,6 +461,13 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
             <tbody id="match-all-tbody"></tbody>
           </table></div></div>
         </div>
+        <!-- 프로젝트 매칭 Word 다운로드 -->
+        <button onclick="downloadMatchDocx()" class="w-full mt-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 text-white" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);">
+          <span class="material-symbols-outlined" style="font-size:.95rem;">download</span>
+          Word 다운로드 — A팀 추천 결과 + 개발자 이력 요약
+        </button>
+      </div><!-- /gstab-gmatch -->
+
       <!-- 프로젝트 직접 만들기 -->
       <div id="gstab-gcreate" class="hidden">
         <div class="feat-card mb-4">
@@ -572,6 +583,8 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
 // ════════════════════════════════════════════
 // CONSTANTS
 // ════════════════════════════════════════════
+// OPIc 기준 (내부 CEFR 코드 → OPIc 표시)
+const ENG_OPIC = {A2:'IL',B1:'IM1',B2:'IM2',C1:'IH',Native:'AL'};
 const ENG_RANK = {A2:1,B1:2,B2:3,C1:4,Native:5};
 const REGION_FLAG = {Vietnam:'🇻🇳','Abu Dhabi':'🇦🇪',USA:'🇺🇸',Indonesia:'🇮🇩'};
 const REGION_COLOR = {Vietnam:'#F97316','Abu Dhabi':'#3B82F6',USA:'#10B981',Indonesia:'#8B5CF6'};
@@ -1094,6 +1107,7 @@ function switchMatchTab(name){
 }
 
 function initGlobal(){
+  loadPool(); // 저장된 Pool 상태 복원
   // region summary
   const regions=['Vietnam','Abu Dhabi','USA','Indonesia'];
   const regCards=document.getElementById('g-region-cards');
@@ -1206,7 +1220,7 @@ function renderPool(){
           <button onclick="removeDev('${d.id}')" class="text-xs text-red-400 hover:text-red-600 ml-auto" title="풀에서 제거">✕ 제거</button>
         </div>
       </div>
-      <p class="text-xs text-gray-500 mb-2">경력 ${d.yrs}년 &nbsp;|&nbsp; 영어 ${d.eng} &nbsp;|&nbsp; ${d.lead?'리더십 있음':'—'} &nbsp;|&nbsp; ${avail_txt}</p>
+      <p class="text-xs text-gray-500 mb-2">경력 ${d.yrs}년 &nbsp;|&nbsp; OPIc <strong>${ENG_OPIC[d.eng]||d.eng}</strong> &nbsp;|&nbsp; ${d.lead?'리더십 있음':'—'} &nbsp;|&nbsp; ${avail_txt}</p>
       <div class="mb-2">${skills_str}</div>
       <p class="text-xs text-gray-500">📁 ${projs}</p>
       <p class="text-xs text-gray-400">🏅 ${certs}</p>
@@ -1265,7 +1279,7 @@ function renderMatchCards(containerId,devs,proj,showRank){
           <div class="text-xs text-gray-400">Fit</div>
         </div>
       </div>
-      <p class="text-xs text-gray-500 mb-2">${d.role} · ${d.yrs}년 · $${d.rate}/h · 영어 ${d.eng} · ${d.lead?'리더십 있음':'—'}</p>
+      <p class="text-xs text-gray-500 mb-2">${d.role} · ${d.yrs}년 · $${d.rate}/h · OPIc ${ENG_OPIC[d.eng]||d.eng} · ${d.lead?'리더십 있음':'—'}</p>
       <div class="mb-2">
         <div class="flex justify-between text-xs mb-1"><span class="text-gray-500">필수스킬 충족</span><span style="color:${fc};font-weight:700">${d.reqMatchPct}%</span></div>
         <div class="score-bar-wrap"><div class="score-bar" style="width:${d.reqMatchPct}%"></div></div>
@@ -1325,6 +1339,50 @@ function toggleHeatmapInfo() {
   document.getElementById('heatmap-info').classList.toggle('hidden');
 }
 
+async function downloadMatchDocx() {
+  const scored = window._scored;
+  if (!scored || !scored.length) { alert('먼저 프로젝트 매칭을 실행해주세요'); return; }
+  const idx = parseInt(document.getElementById('gm-proj').value) || 0;
+  const proj = PROJECTS[idx];
+  const top5 = scored.slice(0, 5);
+  const HOURS_PER_MONTH = 160;
+  const months = proj.months || 4;
+  const totalBudget = top5.reduce((s, d) => s + d.rate * HOURS_PER_MONTH * months, 0);
+
+  let content = `프로젝트명: ${proj.name}\n`;
+  content += `설명: ${proj.desc}\n`;
+  content += `기간: ${months}개월  팀 규모: ${proj.team}명  총 예산(A팀 기준): $${totalBudget.toLocaleString()}\n`;
+  content += `필수 스킬: ${proj.required.join(', ')}\n`;
+  content += `우대 스킬: ${proj.preferred.join(', ')}\n\n`;
+  content += `## A팀 추천 (Fit 상위 5명)\n\n`;
+  top5.forEach((d, i) => {
+    content += `#${i+1} ${d.name} (${d.region}) — Fit ${d.fit}%\n`;
+    content += `역할: ${d.role}  경력: ${d.yrs}년  OPIc: ${ENG_OPIC[d.eng]||d.eng}  시급: $${d.rate}/h\n`;
+    content += `필수스킬 충족: ${d.reqMatchPct}%  리스크: ${d.risk}%  투입 가능: ${d.avail}주 후\n`;
+    content += `스킬: ${Object.entries(d.skills).map(([k,v])=>`${k}(${v})`).join(', ')}\n`;
+    if (d.projs?.length) content += `프로젝트 경험: ${d.projs.join(', ')}\n`;
+    content += `개인 예산: $${(d.rate * HOURS_PER_MONTH * months).toLocaleString()}\n\n`;
+  });
+
+  try {
+    const res = await fetch('/api/hrx/download-docx', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: proj.name + ' — A팀 추천 결과',
+        subtitle: `Fit 상위 5명 · 총 예산 $${totalBudget.toLocaleString()} · ${months}개월`,
+        content
+      })
+    });
+    if (!res.ok) { alert('Word 생성 실패'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'MatchResult_ATeam.docx'; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { alert('다운로드 오류: ' + e.message); }
+}
+
 function toggleAddForm() {
   const f = document.getElementById('add-member-form');
   f.classList.toggle('hidden');
@@ -1357,6 +1415,7 @@ function addMember() {
     projs: ['사용자 추가 멤버']
   };
   DEVS_POOL.push(newDev);
+  savePool(); // localStorage에 저장
   document.getElementById('add-member-form').classList.add('hidden');
   // clear form
   ['nm-name','nm-role','nm-skills','nm-spec'].forEach(id => document.getElementById(id).value = '');
@@ -1367,6 +1426,7 @@ function addMember() {
 function removeDev(id) {
   if (!confirm('이 개발자를 Pool에서 제거할까요?')) return;
   DEVS_POOL = DEVS_POOL.filter(d => d.id !== id);
+  savePool(); // localStorage에 저장
   renderPool();
   // region summary 재렌더
   const regions=['Vietnam','Abu Dhabi','USA','Indonesia'];
@@ -1377,6 +1437,32 @@ function removeDev(id) {
     const avgYr=(ds.reduce((s,d)=>s+d.yrs,0)/ds.length).toFixed(1);
     return`<div class="metric-card text-center"><div class="metric-val">${REGION_FLAG[r]} ${ds.length}명</div><div class="metric-label">${r} · 평균경력 ${avgYr}년</div></div>`;
   }).join('');
+}
+
+// ════════════════════════════════════════════
+// POOL PERSISTENCE (localStorage)
+// ════════════════════════════════════════════
+const POOL_STORAGE_KEY = 'hrx_devs_pool_v1';
+const _ORIGINAL_IDS = DEVS_POOL.map(d => d.id); // snapshot at page-load time
+
+function savePool() {
+  try {
+    const customMembers = DEVS_POOL.filter(d => d.id.startsWith('CUSTOM_'));
+    const removedIds = _ORIGINAL_IDS.filter(id => !DEVS_POOL.find(d => d.id === id));
+    localStorage.setItem(POOL_STORAGE_KEY, JSON.stringify({ customMembers, removedIds }));
+  } catch(e) { console.warn('savePool failed', e); }
+}
+
+function loadPool() {
+  try {
+    const raw = localStorage.getItem(POOL_STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved.removedIds?.length)
+      DEVS_POOL = DEVS_POOL.filter(d => !saved.removedIds.includes(d.id));
+    if (saved.customMembers?.length)
+      DEVS_POOL.push(...saved.customMembers);
+  } catch(e) { console.warn('loadPool failed', e); }
 }
 
 // ════════════════════════════════════════════
