@@ -180,6 +180,8 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
       <div class="si-l">학교</div><div class="si-v" id="si-school" style="font-size:11px">—</div>
       <div class="si-l">국가</div><div class="si-v" id="si-country">—</div>
       <div class="si-l">판정</div><div id="si-verdict">—</div>
+      <div class="si-l">AI 결정</div><div id="si-decision" style="font-size:11px">—</div>
+      <div class="si-l">신뢰도</div><div id="si-confidence" style="font-size:11px">—</div>
     </div>
   </nav>
 
@@ -191,6 +193,18 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
         <div class="ct">1단계 · OCR 추출 결과 vs 회사 DB 등록 정보 대조</div>
         <div class="cs">OCR 문서에서 OCR 추출 정보와 회사 DB 등록 직원·자녀 정보를 항목별로 비교합니다.</div>
 
+        <!-- v2: 규칙엔진 결과 패널 -->
+        <div id="rule-panel" style="display:none;border-radius:12px;padding:12px 16px;margin-bottom:12px;border:1px solid rgba(0,0,0,0.08)">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+            <span style="font-size:11px;font-weight:800;color:var(--so);text-transform:uppercase;letter-spacing:.06em">AI 규칙엔진 v2</span>
+            <span id="re-decision" style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px">—</span>
+            <span id="re-confidence" style="font-size:11px;color:var(--mu)">신뢰도 —</span>
+            <span style="flex:1"></span>
+            <button id="re-reextract" onclick="triggerReextract()" style="font-size:11px;font-weight:700;border:1px solid var(--border);background:#fff;color:var(--mu);border-radius:8px;padding:5px 10px;cursor:pointer">↻ 재추출</button>
+          </div>
+          <div id="re-blockers" style="display:none;background:rgba(186,26,26,0.06);border-left:3px solid #9b1b1b;padding:8px 12px;font-size:12px;color:#7a1010;border-radius:6px;margin-bottom:6px"></div>
+          <div id="re-warnings" style="display:none;background:rgba(201,120,0,0.06);border-left:3px solid #a16400;padding:8px 12px;font-size:12px;color:#7a5000;border-radius:6px"></div>
+        </div>
         <!-- OCR 신뢰도 개편: 수치 대신 등급 텍스트 -->
         <div style="display:flex;align-items:center;gap:10px;background:var(--low);border-radius:10px;padding:10px 14px;margin-bottom:12px;flex-wrap:wrap">
           <span style="font-size:11px;font-weight:800;color:var(--so);text-transform:uppercase;letter-spacing:.06em">OCR 신뢰도</span>
@@ -468,7 +482,65 @@ function renderAll(){
   document.getElementById('si-country').textContent=isOv?`✈ 해외 (${ocr.school_country})`:'🇰🇷 대한민국';
   if(isOv)document.getElementById('si-country').className='si-v ov';
   document.getElementById('si-verdict').innerHTML=mkBadge(cr.verdict||'—');
+  renderRulePanel(appRec.rule_result||null);
   renderStep1(ocr,cr);renderStep2(ocr,cr);renderStep3(cr);
+}
+
+/* ── v2 규칙엔진 결과 패널 ── */
+function renderRulePanel(rr){
+  const panel = document.getElementById('rule-panel');
+  if(!panel) return;
+  if(!rr){ panel.style.display='none'; return; }
+  panel.style.display='';
+  const decisionStyle = {
+    auto_approval:     {label:'자동승인 후보', bg:'rgba(13,107,71,0.1)',  color:'#0d6b47'},
+    manual_review:     {label:'수기 검토',     bg:'rgba(201,120,0,0.12)', color:'#a16400'},
+    reupload_required: {label:'재업로드 요청', bg:'rgba(255,105,0,0.12)', color:'#a14000'},
+    rejected:          {label:'반려',          bg:'rgba(186,26,26,0.1)',  color:'#9b1b1b'},
+  };
+  const d = decisionStyle[rr.decision] || {label:rr.decision||'—', bg:'#eee', color:'#333'};
+  const reD = document.getElementById('re-decision');
+  if(reD){ reD.textContent = d.label; reD.style.background = d.bg; reD.style.color = d.color; }
+  const reC = document.getElementById('re-confidence');
+  if(reC){ reC.textContent = '신뢰도 ' + Math.round((rr.confidence||0)*100) + '%'; }
+  const reB = document.getElementById('re-blockers');
+  if(reB){
+    if((rr.blockers||[]).length){ reB.innerHTML = '<b>⛔ 블로커:</b> ' + rr.blockers.map(esc).join(' · '); reB.style.display=''; }
+    else reB.style.display='none';
+  }
+  const reW = document.getElementById('re-warnings');
+  if(reW){
+    if((rr.warnings||[]).length){ reW.innerHTML = '<b>⚠ 경고:</b> ' + rr.warnings.map(esc).join(' · '); reW.style.display=''; }
+    else reW.style.display='none';
+  }
+  // Sidebar 반영
+  const sD = document.getElementById('si-decision'); if(sD) sD.textContent = d.label;
+  const sC = document.getElementById('si-confidence'); if(sC) sC.textContent = Math.round((rr.confidence||0)*100) + '%';
+}
+
+/* ── v2 재추출 트리거 ── */
+async function triggerReextract(){
+  if(!APP_ID){ alert('신청 ID 없음'); return; }
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.pdf,.jpg,.jpeg,.png';
+  fileInput.onchange = async (ev) => {
+    const file = ev.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const b64 = (reader.result||'').toString().split(',')[1] || '';
+      try{
+        const r = await fetch(`${_API_ORIGIN||''}/api/tuition/admin/applications/${encodeURIComponent(APP_ID)}/reextract`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({image_base64: b64, filename: file.name})
+        });
+        if(r.ok){ const j = await r.json(); alert(`재추출 완료 · ${j.decision} (신뢰도 ${Math.round((j.confidence||0)*100)}%)`); location.reload(); }
+        else { alert('재추출 실패: ' + r.status); }
+      }catch(e){ alert('재추출 오류: ' + e); }
+    };
+    reader.readAsDataURL(file);
+  };
+  fileInput.click();
 }
 
 /* ── Step 1 ── */
@@ -503,7 +575,7 @@ function renderStep1(ocr,cr){
   document.getElementById('cmp-amount').innerHTML=[
     mkCmp('납부일','OCR',ocr.payment_date||'—','기준','90일 이내',cr.payment_date_ok,!cr.payment_date_ok,'납부일 기한'),
     mkCmp('서류종류','OCR',ocr.doc_type||'—','','',true,false,'서류 종류'),
-    mkCmp('납부총액','OCR',(ocr.amount_total||0).toLocaleString()+'원','한도',cr.limit_per_term.toLocaleString()+'원',!cr.over_limit,cr.over_limit,'한도 비교'),
+    mkCmp('실납부액','OCR',((ocr.actual_paid_amount||ocr.amount_total)||0).toLocaleString()+'원','한도',cr.limit_per_term.toLocaleString()+'원',!cr.over_limit,cr.over_limit,'한도 비교'),
     mkCmp('지급예정','','','→',(cr.amount_payable||0).toLocaleString()+'원',true,false,'지급 예정'),
   ].join('');
 
@@ -701,7 +773,7 @@ function buildDraftLocal(){
 
 2. 납부 내역
    ▸ 납부일자     : ${ocr.payment_date||'—'}
-   ▸ 납부 합계    : ${(ocr.amount_total||0).toLocaleString()}원
+   ▸ 실납부액    : ${((ocr.actual_paid_amount||ocr.amount_total)||0).toLocaleString()}원
    ▸ 지급 예정    : ${(cr.amount_payable||0).toLocaleString()}원  (규정 한도 적용)
 
 3. DB 대조 결과
@@ -779,7 +851,7 @@ function buildEmailFromVerdict(overrideAct){
   const childName=ocr.child_name||'—';
   const school=ocr.school_name||'—';
   const payable=(cr.amount_payable||0).toLocaleString();
-  const req=(ocr.amount_total||0).toLocaleString();
+  const req=((ocr.actual_paid_amount||ocr.amount_total)||0).toLocaleString();
   const term=`${ocr.benefit_year||'—'}년 ${ocr.benefit_term||'—'}`;
   const today=new Date().toLocaleDateString('ko-KR');
 

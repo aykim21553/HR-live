@@ -145,7 +145,7 @@ input[type=file]{display:none;}
            ondrop="onDrop(event)">
         <span class="material-symbols-outlined" id="uicon">upload_file</span>
         <h3 id="utitle">고지서 파일을 여기에 드래그하거나 클릭</h3>
-        <p>PDF · JPG · PNG — 교육비납입확인서, 학자금납입확인서, 학자금납입증명서</p>
+        <p>PDF 원본 권장 · JPG · PNG — 교육비납입확인서, 학자금납입확인서, 학자금납입증명서</p>
         <input type="file" id="finput" accept=".pdf,.jpg,.jpeg,.png" onchange="onFile(event)">
       </div>
       <div id="doc-prev" class="doc-prev" style="display:none">
@@ -153,6 +153,7 @@ input[type=file]{display:none;}
         <img id="prev-img" style="display:none" alt="미리보기">
         <span class="prev-badge" id="prev-badge"></span>
       </div>
+      <div class="tip" style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412"><span class="hw" style="background:#f97316;color:#fff">원본 권장</span><span>포털 화면 <b>캡처본</b>은 해상도·편집 의심으로 신뢰도가 낮게 평가됩니다. <b>PDF 원본</b>이나 고해상도 스캔본을 업로드하면 자동승인 확률이 높아집니다.</span></div>
       <div class="tip"><span class="hw">Agent's Tip</span><span>선명한 파일일수록 OCR 정확도가 높아집니다. PDF는 1페이지 기준으로 분석합니다. 해외학교 서류도 지원합니다.</span></div>
     </div>
     <div class="footer">
@@ -196,6 +197,7 @@ input[type=file]{display:none;}
         <span class="material-symbols-outlined" style="font-size:16px">flight_takeoff</span>
         해외학교 서류 감지 — 추가 서류 검토가 필요합니다
       </div>
+      <div id="lowq-alert" style="display:none;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:10px;padding:10px 14px;font-size:12.5px;margin-top:8px"></div>
       <div class="ocr-grid" id="ocr-grid" style="margin-top:12px"></div>
       <div style="background:var(--low);border-radius:10px;padding:11px 14px;font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;margin-top:4px">
         <span class="material-symbols-outlined" style="font-size:17px;color:var(--orange)">info</span>
@@ -410,13 +412,32 @@ function ocrGrade(conf){
   return         {label:'재시도 필요',   bg:'rgba(186,26,26,0.08)',  color:'#9b1b1b', bar:'#dc2626'};
 }
 function showOcrResult(d){
-  if(!d){d={confidence:0,child_name:'—',school_name:'—',school_type:'—',school_country:'KR',payment_date:'—',amount_total:0,benefit_year:'—',benefit_term:'—',doc_type:'—'};}
+  if(!d){d={confidence:0,child_name:'—',school_name:'—',school_type:'—',school_country:'KR',payment_date:'—',actual_paid_amount:0,amount_total:0,academic_year:'—',semester_code:'—',doc_type:'—'};}
   const conf=Math.round((d.confidence||0)*100);
   const _og=ocrGrade(conf);
   const _af=document.getElementById('cfill');if(_af){_af.style.width=conf+'%';_af.style.background=_og.bar;}
   const _al=document.getElementById('clbl');if(_al){_al.textContent=_og.label;_al.style.background=_og.bg;_al.style.color=_og.color;}
   const isOverseas=d.school_country&&d.school_country!=='KR';
   const _oa=document.getElementById('overseas-alert');if(_oa)_oa.style.display=isOverseas?'inline-flex':'none';
+  // v2: 저신뢰·캡처의심 안내
+  const lowConf = conf < 70 || d.is_screenshot_suspect || d.source_quality === 'low';
+  const _lq = document.getElementById('lowq-alert');
+  if(_lq){
+    if(lowConf){
+      const msgs=[];
+      if(d.is_screenshot_suspect) msgs.push('캡처 의심');
+      if(d.source_quality === 'low') msgs.push('저품질 원본');
+      if(conf < 70) msgs.push(`신뢰도 ${conf}%`);
+      _lq.innerHTML = `<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">warning</span> ${msgs.join(' · ')} — <b>PDF 원본 재업로드</b> 시 자동승인 확률이 높아집니다.`;
+      _lq.style.display = 'block';
+    } else { _lq.style.display = 'none'; }
+  }
+  const actual = d.actual_paid_amount || d.amount_total || 0;
+  const gross  = d.gross_tuition_amount || 0;
+  const schol  = d.scholarship_amount   || 0;
+  const disc   = d.discount_amount      || 0;
+  const semMap = {'1':'1학기','2':'2학기','summer':'여름학기','winter':'겨울학기','unknown':'—'};
+  const semLabel = semMap[d.semester_code] || d.benefit_term || '—';
   const tag=(c,w)=>w?`<span class="ocr-tag warn">검토 필요</span>`:`<span class="ocr-tag">${c>=85?'OCR 확인':'저신뢰도'}</span>`;
   const fields=[
     {label:'자녀·학생명',val:d.child_name||'—',cls:''},
@@ -424,50 +445,86 @@ function showOcrResult(d){
     {label:'학교급',val:d.school_type||'—',cls:''},
     {label:'학교 국가',val:isOverseas?`해외 (${d.school_country})`:'대한민국',cls:isOverseas?'overseas':''},
     {label:'납부일',val:d.payment_date||'—',cls:''},
-    {label:'납부 총액',val:d.amount_total?(d.amount_total).toLocaleString()+'원':'—',cls:'amount'},
-    {label:'수혜연도·기간',val:d.benefit_year?`${d.benefit_year}년 ${d.benefit_term||'—'}`:'—',cls:''},
-    {label:'서류 종류',val:d.doc_type||'—',cls:''},
+    {label:'실납부액',val:actual?actual.toLocaleString()+'원':'—',cls:'amount'},
+    {label:'등록금 총액',val:gross?gross.toLocaleString()+'원':'—',cls:''},
+    {label:'장학금',val:schol?schol.toLocaleString()+'원':'0원',cls:''},
+    {label:'감면·할인',val:disc?disc.toLocaleString()+'원':'0원',cls:''},
+    {label:'학년도·학기',val:d.academic_year?`${d.academic_year}년 ${semLabel}`:(d.benefit_year?`${d.benefit_year}년 ${semLabel}`:'—'),cls:''},
+    {label:'서류 종류',val:d.doc_type||d.document_type||'—',cls:''},
   ];
   const _og2=document.getElementById('ocr-grid');if(_og2)_og2.innerHTML=fields.map(f=>`
     <div class="ocr-field">${tag(conf,conf<70)}<div class="ofl">${f.label}</div><div class="ofv ${f.cls}">${esc(String(f.val))}</div></div>`).join('');
   goStep(3);
 }
 
+async function _sha256Hex(buf){
+  try{
+    const h = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch(e){return null;}
+}
+
 async function submitApp(){
   const btn=document.querySelector('#s3 .btn-p');btn.disabled=true;btn.textContent='제출 중…';
   const empId=document.getElementById('emp-id').value.trim()||'EMP001';
-  let id=null, verdict=null;
+  let id=null, verdict=null, submitRes=null;
 
-  // 새 엔드포인트: OCR 전체를 보내고 서버에서 DB 대조 실행
+  // 원본 파일 SHA-256 (중복탐지용) + source_file_type
+  let sha256=null, sourceType='unknown';
+  if(uploadedFile){
+    try{ const buf = await uploadedFile.arrayBuffer(); sha256 = await _sha256Hex(buf); }catch(e){}
+    sourceType = uploadedFile.type==='application/pdf' ? 'pdf' : (uploadedFile.type && uploadedFile.type.startsWith('image/') ? 'image' : 'unknown');
+  }
+
+  // 새 엔드포인트 v2: OCR 정규화 + 규칙엔진
   if(apiLive && ocrData){
     try{
       const r=await fetch(SUBMIT_URL,{method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({employee_id:empId, ocr:ocrData})});
-      if(r.ok){const j=await r.json();id=j.id;verdict=j.verdict;}
+        body:JSON.stringify({
+          employee_id: empId,
+          ocr: ocrData,
+          file_sha256: sha256,
+          source_file_type: sourceType,
+          application_hints: {}
+        })});
+      if(r.ok){submitRes = await r.json(); id=submitRes.id; verdict=submitRes.verdict;}
     }catch(e){console.warn('Submit API 오류:',e);}
   }
   // DEMO fallback
   if(!id)id='APP-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
   appId=id;
-  showReceipt(id, verdict);
+  showReceipt(id, verdict, submitRes);
   btn.disabled=false;
 }
 
-function showReceipt(id, verdict){
+function showReceipt(id, verdict, submitRes){
   document.getElementById('rcpt-num').textContent=id;
   const d=ocrData||{};
   const empId=document.getElementById('emp-id').value||'EMP001';
-  // 직원 화면에는 AI 판정 원시 결과 미노출 — 최종 결정은 관리자
-  document.getElementById('rcpt-detail').innerHTML=[
+  const actual = d.actual_paid_amount || d.amount_total || 0;
+  // 상태 표기: 규칙엔진 decision 우선
+  const decisionMap = {
+    'auto_approval':     '자동승인 후보 — 담당자 최종 확인',
+    'manual_review':     '수기 검토 예정',
+    'reupload_required': '재업로드 요청 예정',
+    'rejected':          '반려 예정'
+  };
+  let statusLbl = '⏳ 담당자 검토 예정';
+  if(submitRes && submitRes.decision){ statusLbl = decisionMap[submitRes.decision] || statusLbl; }
+  const rows = [
     ['신청자 사번', empId],
     ['자녀명', d.child_name||'—'],
     ['학교명', d.school_name||'—'],
-    ['납부금액', d.amount_total?(d.amount_total).toLocaleString()+'원':'—'],
+    ['실납부액', actual?actual.toLocaleString()+'원':'—'],
     ['학교 국가', d.school_country&&d.school_country!=='KR'?`해외 (${d.school_country})`:'대한민국'],
-    ['처리 상태', '⏳ 담당자 검토 예정'],
+    ['처리 상태', statusLbl],
     ['접수 일시', new Date().toLocaleString('ko-KR')],
-  ].map(([k,v])=>`<div class="rd-row"><span class="rd-k">${k}</span><span class="rd-v">${esc(String(v))}</span></div>`).join('');
+  ];
+  if(submitRes && (submitRes.warnings||[]).length){
+    rows.push(['검토 참고', submitRes.warnings.slice(0,3).join(' · ')]);
+  }
+  document.getElementById('rcpt-detail').innerHTML = rows.map(([k,v])=>`<div class="rd-row"><span class="rd-k">${k}</span><span class="rd-v">${esc(String(v))}</span></div>`).join('');
   document.getElementById('admin-link').href=`admin_review.html?id=${encodeURIComponent(id)}&emp=${empId}`;
   goStep(4);
 }
