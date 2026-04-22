@@ -1292,9 +1292,32 @@ async def ocr_invoice(body: OcrBody):
 
 [서류 유형별 필드 위치]
 1. 교육비납입확인서(유치원/어린이집): 원아명→child_name, 보호자명→guardian_name, 합계금액→amount_total
-2. 학자금납입확인서(고등학교): 학생명→child_name, 보호자명→guardian_name, 합계→amount_total  
+2. 학자금납입확인서(고등학교): 학생명→child_name, 보호자명→guardian_name, 합계→amount_total
 3. 학자금납입증명서(대학교): 성명→child_name, 학번→student_id, 합계→amount_total
 4. 국제학교/해외: school_country에 ISO 국가코드(US/UK/SG 등)
+
+[child_name 추출 규칙 - 매우 중요, 절대 간과 금지]
+학생/피부양자 이름은 아래 라벨 중 어떤 것이든 등장하면 반드시 child_name으로 매핑하세요.
+허용 라벨(공백·줄바꿈 무관, 대소문자 무관):
+  - "성명", "성 명", "성  명", "성\t명"  (가장 흔함 - 표 형식에서 글자 사이 공백이 있을 수 있음)
+  - "학생명", "학생 성명", "학생성명", "학생 명"
+  - "원아명", "유아명", "자녀명", "자녀 성명"
+  - "피부양자 성명", "피보험자 성명", "수혜자명", "수혜자 성명"
+  - "납입자명"(피교육자 본인이 대학생 납부자인 경우)
+  - 영문: "Name", "Student Name", "Full Name"
+
+child_name vs guardian_name 구분 원칙 (우선순위 순):
+  1) 문서에 "학생정보/수혜자정보/피부양자정보" 섹션이 있으면 그 안의 성명 = child_name
+  2) "납부자정보/보호자정보/학부모" 섹션의 성명 = guardian_name (child_name 아님)
+  3) 성명 옆이나 같은 행에 학번/학년/반/학과/전공/생년월일이 있으면 = child_name
+  4) 성명 옆에 사번/직원번호/부서/소속회사가 있으면 = guardian_name (회사 직원)
+  5) 학자금납입증명서처럼 피교육자 본인 명의 서류면 문서 상단의 성명 = child_name
+  6) 성명이 하나만 있고 구분이 애매하면 child_name으로 우선 매핑
+
+절대 null 금지 조건:
+  이미지에 한글 2~4자의 사람 이름으로 보이는 문자열이 "성명" 계열 라벨과 함께 나타나면
+  반드시 그 값을 child_name으로 반환하세요. 라벨과 이름 사이 공백/줄바꿈은 무시하세요.
+  표 형식에서 "성", "명"이 세로나 가로로 분리돼 있어도 하나의 라벨로 해석하세요.
 
 반환 JSON:
 {
@@ -1351,9 +1374,44 @@ async def ocr_invoice(body: OcrBody):
     json_match = re.search(r"\{[\s\S]*\}", raw)
     raw_json = json_match.group(0) if json_match else raw
     try:
-        return json.loads(raw_json)
+        result = json.loads(raw_json)
     except json.JSONDecodeError:
         raise HTTPException(status_code=422, detail=f"OCR 결과 파싱 실패: {raw[:300]}")
+
+    # ── child_name 후처리 fallback ──
+    # 프롬프트가 null을 돌려준 경우에도 raw 응답 텍스트에서 성명 패턴을 직접 재추출.
+    # 한글 2~4자 이름만 수용. 흔한 거짓 양성(예: "성명란", "성명표")은 자체 필터.
+    def _recover_child_name(text: str) -> str | None:
+        if not text:
+            return None
+        # notes/raw에 "홍길동" 류 이름이 라벨과 함께 등장하는 모든 변형을 포착
+        patterns = [
+            r'학\s*생\s*(?:성\s*)?명\s*[:：\s]*([가-힣]{2,4})(?![가-힣])',
+            r'원\s*아\s*명\s*[:：\s]*([가-힣]{2,4})(?![가-힣])',
+            r'자\s*녀\s*명\s*[:：\s]*([가-힣]{2,4})(?![가-힣])',
+            r'피\s*부\s*양\s*자\s*성\s*명\s*[:：\s]*([가-힣]{2,4})(?![가-힣])',
+            r'수\s*혜\s*자\s*(?:성\s*)?명\s*[:：\s]*([가-힣]{2,4})(?![가-힣])',
+            r'성\s*명\s*[:：\s]+([가-힣]{2,4})(?![가-힣])',
+        ]
+        _blacklist = {"성명란", "성명표", "성명서", "성명록", "성명확인"}
+        for pat in patterns:
+            for m in re.finditer(pat, text):
+                candidate = m.group(1).strip()
+                if candidate and candidate not in _blacklist:
+                    return candidate
+        return None
+
+    if not (result.get("child_name") or "").strip():
+        # 1차: notes 필드에 모델이 남긴 언급 확인
+        recovered = _recover_child_name(result.get("notes") or "")
+        if not recovered:
+            # 2차: raw 전체에서 재시도 (모델이 주석처럼 남긴 텍스트도 포함)
+            recovered = _recover_child_name(raw)
+        if recovered:
+            result["child_name"] = recovered
+            result["_child_name_source"] = "regex_fallback"
+
+    return result
 
 
 # ══════════════════════════════════════════════════════════════
