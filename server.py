@@ -272,6 +272,8 @@ def cross_reference(employee_id: str, ocr: dict) -> dict:
     return r
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 CHAT_MODEL        = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
+# OCR은 정확도 우선 -> Sonnet 4.6 사용 (Haiku는 표·세로 라벨 해석에서 실패율 높음)
+OCR_MODEL         = os.getenv("OCR_MODEL",    "claude-sonnet-4-6")
 CHUNK_SIZE        = int(os.getenv("RAG_CHUNK_SIZE", "720"))
 CHUNK_OVERLAP     = int(os.getenv("RAG_CHUNK_OVERLAP", "100"))
 TOP_K             = int(os.getenv("RAG_TOP_K", "5"))
@@ -1295,6 +1297,19 @@ async def ocr_invoice(body: OcrBody):
 2. 학자금납입확인서(고등학교): 학생명→child_name, 보호자명→guardian_name, 합계→amount_total
 3. 학자금납입증명서(대학교): 성명→child_name, 학번→student_id, 합계→amount_total
 4. 국제학교/해외: school_country에 ISO 국가코드(US/UK/SG 등)
+5. "영수증" 제목의 학교 발급 서류: doc_type="학자금납입확인서"로 매핑. 발행기관이 "○○학교장"이면 학교급 추론.
+
+[영수증 형식 - 매우 중요한 가로 4칸 병렬 표 해석]
+"영 수 증" 제목의 학교 발급 서류는 아래처럼 같은 행에 학번·성명이 병렬 배치됩니다:
+  [학 번 | 학년·반·번호 정보 | 성 명 | 학생이름]
+  [금 액 |                금액 원 정              ]
+  [내 역 | 차 수 | 금 액 | 이체일자]
+  [수업료 | 1/4분기 | 1,360,000 | 2026-03-26]
+-> "성 명" 셀의 오른쪽 옆 셀 값이 child_name (반드시 추출)
+-> "학 번" 셀의 오른쪽 옆 셀 값에 학년·반·번호 -> grade 필드
+-> "수업료" 행의 "이체일자" 열 값 -> payment_date
+-> "계/합계" 행의 "금액" 열 값 -> amount_total
+-> 발행기관 "인천하늘고등학교장" -> school_name="인천하늘고등학교", school_type="고등학교"
 
 [child_name 추출 규칙 - 매우 중요, 절대 간과 금지]
 학생/피부양자 이름은 아래 라벨 중 어떤 것이든 등장하면 반드시 child_name으로 매핑하세요.
@@ -1346,8 +1361,8 @@ child_name vs guardian_name 구분 원칙 (우선순위 순):
 
     try:
         message = client.messages.create(
-            model=CHAT_MODEL,
-            max_tokens=1024,
+            model=OCR_MODEL,         # OCR은 Sonnet 4.6 - Haiku 대비 표·세로라벨 해석 정확도 우선
+            max_tokens=2048,         # Sonnet 대응 충분 여유 (기존 1024는 긴 서류에서 truncation 위험)
             messages=[{
                 "role": "user",
                 "content": [
