@@ -2184,23 +2184,62 @@ async def hrx_feedback(req: HRXFeedbackRequest):
 
 
 # ── HR X: 직접 작성 모드 — 자유 상황 텍스트 → Claude 분석 ─────
+# v3: MBTI 기반 상황 리더십 + 부드러운 전달 Tip + truncation 방어 (max_tokens 8000 + 자동 continuation)
 class FeedbackDirectRequest(BaseModel):
     situation_text: str
+    leader_mbti: str = ""    # 팀장 MBTI (예: ENTJ) — 비어 있으면 미적용
+    member_mbti: str = ""    # 팀원 MBTI (예: ISFP) — 비어 있으면 미적용
+
+# MBTI 4축 해석
+_MBTI_AXIS = {
+    "E": ("외향", "사람·말로 에너지 충전, 즉각 반응 선호"),
+    "I": ("내향", "혼자 생각 정리 후 표현, 충분한 사고 시간 필요"),
+    "S": ("감각", "구체적 사실·데이터·경험 중심, 단계별 설명 선호"),
+    "N": ("직관", "큰 그림·미래 가능성·패턴 중심, 의미 부여 선호"),
+    "T": ("사고", "객관적 논리·결과 중심, 솔직한 평가 수용"),
+    "F": ("감정", "관계·가치·공감 중심, 정서적 안전감 우선"),
+    "J": ("판단", "구조·계획·마감 중심, 명확한 결론 선호"),
+    "P": ("인식", "유연·탐색·과정 중심, 가능성 열어두기 선호"),
+}
+
+def _mbti_block(label: str, mbti: str) -> str:
+    mbti = (mbti or "").strip().upper()
+    if len(mbti) != 4 or any(c not in "EISNTFJP" for c in mbti):
+        return ""
+    parts = [f"{c}({_MBTI_AXIS[c][0]}: {_MBTI_AXIS[c][1]})" for c in mbti if c in _MBTI_AXIS]
+    return f"- {label} MBTI: {mbti} → " + ", ".join(parts)
 
 @app.post("/api/hrx/feedback-direct")
 async def hrx_feedback_direct(req: FeedbackDirectRequest):
-    """직접 작성 상황 텍스트를 Claude AI가 분석하여 맞춤 Vocabulary 생성"""
+    """직접 작성 상황 텍스트 + MBTI → Claude 맞춤 Vocabulary (8개 섹션, truncation 방어)"""
     if not req.situation_text or len(req.situation_text.strip()) < 20:
         raise HTTPException(status_code=400, detail="상황 텍스트가 너무 짧습니다.")
+
+    leader_block = _mbti_block("팀장(피드백 제공자)", req.leader_mbti)
+    member_block = _mbti_block("팀원(피드백 수신자)", req.member_mbti)
+    mbti_section = ""
+    if leader_block or member_block:
+        mbti_section = f"""
+[MBTI 기반 상황 리더십 컨텍스트]
+{leader_block}
+{member_block}
+
+위 MBTI를 반영해 다음을 모든 섹션에 자연스럽게 녹여 주세요:
+- 팀원 성향에 맞는 톤·속도·표현 강도 조절 (예: F형엔 공감·관계 우선, T형엔 데이터·근거 우선; I형엔 충분한 침묵·생각 시간; S형엔 구체적 예시; N형엔 큰 그림·의미)
+- 팀장 본인의 성향에서 비롯된 사각지대 보완 (예: T형 팀장이 F형 팀원과 이야기할 때 주의할 점)
+- 두 사람의 축이 다른 부분에서 발생할 수 있는 오해와 그 대응
+""".strip()
 
     prompt = f"""당신은 한화투자증권 혁신(리더)지원실 소속 HR 코칭 전문가입니다. 아래 코칭 상황을 깊이 이해하고, 이 상황에 최적화된 피드백 Vocabulary Pool을 생성해 주세요.
 
 [코칭 상황]
 {req.situation_text}
 
-위 상황을 분석하여 다음 7개 섹션을 한국어로 작성해 주세요. 각 항목은 불릿(·)으로 구분하고, 이 상황의 맥락과 뉘앙스를 충분히 반영해 주세요.
+{mbti_section}
 
-중요: 응답의 첫 줄에 전체 제목(예: "# 한국 기업 HR 코칭 Vocabulary Pool" 등)을 절대 추가하지 마세요. 아래 섹션 헤더(##)만 사용하세요.
+위 정보를 분석하여 다음 8개 섹션을 한국어로 작성해 주세요. 각 항목은 불릿(·)으로 구분하고, 이 상황의 맥락과 뉘앙스를 충분히 반영해 주세요.
+
+중요: 응답의 첫 줄에 전체 제목(예: "# 한국 기업 HR 코칭 Vocabulary Pool" 등)을 절대 추가하지 마세요. 아래 섹션 헤더(##)만 사용하세요. 마지막 8번 섹션의 마지막 문장까지 반드시 끝맺어 주세요.
 
 ## 1. 상황 분석 요약 (이 상황의 핵심 코칭 포인트 3~4가지)
 ## 2. 핵심 코칭 표현 (이 상황에서 가장 효과적인 표현 10개 이상)
@@ -2209,32 +2248,111 @@ async def hrx_feedback_direct(req: FeedbackDirectRequest):
 ## 5. 완성형 피드백 문장 예시 (이 맥락이 담긴 완전한 문장 7개 이상)
 ## 6. 성찰 유도 코칭 질문 (이 상황에 맞는 열린 질문 8개 이상)
 ## 7. 마무리 · 동기부여 표현 (다음 행동으로 연결하는 마무리 5개 이상)
+## 8. 부드럽게 전달하는 대화 Tip (톤·타이밍·바디랭귀지·MBTI 적용 포인트 7개 이상 — 각 항목 한 줄 내외로 즉시 활용 가능하게)
 
-모든 내용은 위 상황의 구체적 맥락을 반영하여 실제로 사용 가능한 표현으로 작성해 주세요."""
+모든 내용은 위 상황의 구체적 맥락을 반영하여 실제 사용 가능한 표현으로 작성해 주세요."""
+
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY not configured")
 
     try:
         client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-        msg = client.messages.create(
-            model=CHAT_MODEL,
-            max_tokens=3500,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw_text = msg.content[0].text
+        messages = [{"role": "user", "content": prompt}]
+        accumulated = ""
+        # truncation 방어: stop_reason != end_turn 이면 최대 2회 이어쓰기
+        for attempt in range(3):
+            msg = client.messages.create(
+                model=CHAT_MODEL,
+                max_tokens=8000,
+                messages=messages,
+            )
+            chunk = msg.content[0].text if msg.content else ""
+            accumulated += chunk
+            if msg.stop_reason == "end_turn":
+                break
+            # 이어쓰기 — assistant 응답을 history에 넣고 사용자가 "이어서" 요청
+            messages.append({"role": "assistant", "content": chunk})
+            messages.append({"role": "user", "content": "방금 응답이 중간에 끊겼습니다. 끊긴 부분부터 이어서 끝까지(특히 8번 섹션의 마지막 문장까지) 작성해 주세요. 새 제목·머리말 없이 바로 이어서만 작성하세요."})
 
-        # 첫 줄이 # 로 시작하는 전체 제목이면 제거 (## 섹션 헤더는 유지)
-        lines = raw_text.split('\n')
-        filtered_lines = []
+        # 첫 줄이 # 단일 제목이면 제거
+        lines = accumulated.split("\n")
+        filtered = []
         for i, line in enumerate(lines):
-            stripped = line.strip()
-            # 첫 번째 실질 줄이 # 제목(##이 아닌 단일 #)이면 건너뜀
-            if i == 0 and stripped.startswith('#') and not stripped.startswith('##'):
+            s = line.strip()
+            if i == 0 and s.startswith("#") and not s.startswith("##"):
                 continue
-            filtered_lines.append(line)
-        result_text = '\n'.join(filtered_lines).lstrip('\n')
+            filtered.append(line)
+        result_text = "\n".join(filtered).lstrip("\n")
 
-        return {"result": result_text}
+        return {
+            "result":      result_text,
+            "stop_reason": msg.stop_reason,
+            "leader_mbti": req.leader_mbti,
+            "member_mbti": req.member_mbti,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── HR X: 텔레그램 발송 ─────────────────────────────────────────
+class FeedbackTelegramRequest(BaseModel):
+    bot_token: str       # 텔레그램 봇 토큰 (BotFather로 생성)
+    chat_id:   str       # 받을 채팅 ID (개인/그룹/채널)
+    title:     str = "Feedback Vocabulary"
+    text:      str       # 마크다운 결과 본문
+
+@app.post("/api/hrx/feedback-telegram")
+async def hrx_feedback_telegram(req: FeedbackTelegramRequest):
+    """완성된 Feedback Vocabulary 결과를 Telegram으로 전송 (긴 문서는 분할 전송)."""
+    import httpx as _httpx
+    if not req.bot_token or not req.chat_id:
+        raise HTTPException(status_code=400, detail="bot_token / chat_id 필수")
+    if not req.text or len(req.text.strip()) < 10:
+        raise HTTPException(status_code=400, detail="발송할 본문이 비어 있습니다.")
+
+    # Telegram 메시지 길이 제한: 4096자. 안전하게 3500자씩 분할 (한국어 기준)
+    body = (req.text or "").strip()
+    title = (req.title or "Feedback Vocabulary").strip()
+    header = f"📋 *{title}*\n_{datetime.now().strftime('%Y-%m-%d %H:%M')}_\n\n"
+    full = header + body
+    chunks = []
+    CHUNK = 3500
+    while full:
+        if len(full) <= CHUNK:
+            chunks.append(full); break
+        # 가능한 줄 단위로 자르기
+        cut = full.rfind("\n", 0, CHUNK)
+        if cut < CHUNK // 2:
+            cut = CHUNK
+        chunks.append(full[:cut])
+        full = full[cut:].lstrip("\n")
+
+    sent = 0
+    last_error = None
+    api_url = f"https://api.telegram.org/bot{req.bot_token}/sendMessage"
+    async with _httpx.AsyncClient(timeout=20.0) as cli:
+        for idx, ch in enumerate(chunks, 1):
+            suffix = f"\n\n— ({idx}/{len(chunks)})" if len(chunks) > 1 else ""
+            try:
+                r = await cli.post(api_url, json={
+                    "chat_id": req.chat_id,
+                    "text":    ch + suffix,
+                    "parse_mode": "Markdown",
+                    "disable_web_page_preview": True,
+                })
+                if r.status_code == 200 and r.json().get("ok"):
+                    sent += 1
+                else:
+                    last_error = f"HTTP {r.status_code}: {r.text[:200]}"
+                    break
+            except Exception as ex:
+                last_error = str(ex); break
+
+    if sent == 0:
+        raise HTTPException(status_code=502, detail=f"Telegram 전송 실패: {last_error or '알 수 없는 오류'}")
+
+    return {"ok": True, "chunks_sent": sent, "total_chunks": len(chunks),
+            "warning": last_error if last_error else None}
 
 
 # ── HR X: 프로젝트 스킬 분류 ─────────────────────────────────
