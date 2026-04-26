@@ -77,6 +77,30 @@
   .pagination{display:flex;justify-content:center;gap:6px;padding:14px;}
   .pg-btn{width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
   .pg-btn.active{background:var(--blue-mid);color:#fff;border-color:var(--blue-mid);}
+
+  /* 액션 버튼 그룹 */
+  .action-bar{background:#fff;border-radius:10px;border:1px solid var(--border);padding:12px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .btn-action{padding:7px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid;display:flex;align-items:center;gap:6px;transition:.15s;}
+  .btn-dl{background:#fff;color:var(--green-badge);border-color:rgba(26,122,60,0.3);}
+  .btn-dl:hover{background:var(--green-light);}
+  .btn-draft{background:#fff;color:var(--blue-mid);border-color:rgba(46,117,182,0.3);}
+  .btn-draft:hover{background:var(--blue-light);}
+  .btn-draft:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* 일괄 기안문 모달 */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal-box{background:#fff;border-radius:14px;width:100%;max-width:720px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+  .modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .modal-header h2{font-size:15px;font-weight:700;color:var(--text);}
+  .modal-close{width:28px;height:28px;border-radius:50%;border:none;background:var(--gray-light);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--gray);}
+  .modal-body{padding:16px 20px;overflow-y:auto;flex:1;}
+  .modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;}
+  .draft-item{border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;}
+  .draft-item-header{padding:10px 14px;background:var(--blue-pale);display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:13px;font-weight:600;color:var(--blue);}
+  .draft-item-body{padding:14px;background:#fafafa;font-size:11px;line-height:1.75;white-space:pre-wrap;font-family:'Malgun Gothic',sans-serif;color:#333;display:none;max-height:300px;overflow-y:auto;}
+  .draft-item-body.open{display:block;}
+  .draft-progress{text-align:center;padding:32px;color:var(--blue-mid);font-size:14px;}
 </style>
 </head>
 <body>
@@ -141,6 +165,18 @@
     <button class="btn-refresh" onclick="loadData()">↻ 새로고침</button>
   </div>
 
+  <!-- 액션 버튼 바 -->
+  <div class="action-bar">
+    <span style="font-size:12px;font-weight:600;color:var(--gray)">일괄 처리</span>
+    <button class="btn-action btn-dl" onclick="downloadCSV()" title="현재 필터된 목록 전체를 CSV로 저장">
+      📥 목록 CSV 다운로드
+    </button>
+    <button class="btn-action btn-draft" id="batch-draft-btn" onclick="openBatchDraft()" title="자동승인후보 건에 대한 기안문 일괄 생성">
+      📄 자동승인후보 기안문 일괄 생성
+    </button>
+    <span id="batch-draft-count" style="font-size:11px;color:var(--gray)"></span>
+  </div>
+
   <!-- 신청 목록 테이블 -->
   <div class="table-wrap">
     <table>
@@ -166,6 +202,25 @@
     <div class="pagination" id="pagination"></div>
   </div>
 
+</div>
+
+<!-- ── 일괄 기안문 모달 ─────────────────────────────────── -->
+<div class="modal-overlay" id="batch-modal" onclick="if(event.target===this)closeBatchModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>📄 자동승인후보 기안문 일괄 생성</h2>
+      <button class="modal-close" onclick="closeBatchModal()">✕</button>
+    </div>
+    <div class="modal-body" id="batch-modal-body">
+      <div class="draft-progress">기안문을 생성하고 있습니다…</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-action btn-dl" id="download-all-btn" onclick="downloadAllDrafts()" style="display:none">
+        ⬇ 전체 기안문 TXT 다운로드
+      </button>
+      <button class="btn-action btn-draft" onclick="closeBatchModal()">닫기</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -289,6 +344,7 @@ function updateStats() {
   document.getElementById("cnt-supplement").textContent = cnt("보완필요");
   document.getElementById("cnt-auto").textContent = cnt("자동승인후보");
   document.getElementById("cnt-total").textContent = allData.length;
+  updateBatchCount();
 }
 
 // ─── 뱃지 스타일 ──────────────────────────────────────────────────────────────
@@ -302,82 +358,4 @@ function badgeClass(rule) {
 function fmtAmt(n) { return n > 0 ? n.toLocaleString() + "원" : "—"; }
 function fmtDate(iso) { return iso ? iso.slice(0, 10) : "—"; }
 
-// ─── 행 렌더링 ────────────────────────────────────────────────────────────────
-function renderRows(data) {
-  const tbody = document.getElementById("tbody");
-  if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="11" class="empty">조회된 신청 건이 없습니다.</td></tr>`;
-    updatePagination(0);
-    return;
-  }
-  tbody.innerHTML = data.map(r => {
-    const diff = r.amount_requested - r.amount_payable;
-    const diffHtml = diff > 0 ? `<div class="amt-diff">-${diff.toLocaleString()}원 조정</div>` : "";
-    const flagsHtml = (r.flags || []).map(f => `<span class="flag-chip">${f}</span>`).join("") || "—";
-    const dupWarn = r.duplicate_suspected ? `<span class="warn-icon" title="중복의심">⚠</span>` : "";
-    const limitWarn = r.limit_exhausted ? `<span class="warn-icon" title="한도소진">🚫</span>` : "";
-
-    // 누적이력 표시
-    let histHtml = "";
-    if (r.terms_remaining !== undefined && r.terms_remaining !== null) {
-      const pct = r.terms_used + r.terms_remaining > 0
-        ? Math.round((r.terms_used / (r.terms_used + r.terms_remaining)) * 100) : 0;
-      histHtml = `<span class="hist-chip">${r.terms_used}회/${r.terms_used + r.terms_remaining}회 (${pct}%)</span>`;
-    }
-
-    const url = `admin_review.html?id=${encodeURIComponent(r.id)}&emp=${encodeURIComponent(r.employee_id||'')}`;
-    return `<tr class="data-row" style="cursor:pointer" onclick="location.href='${url}'">
-      <td>${fmtDate(r.applied_at)}</td>
-      <td>${r.employee_name}</td>
-      <td>${r.child_name}${dupWarn}${limitWarn}</td>
-      <td>${r.school_type}</td>
-      <td>${r.benefit_term}</td>
-      <td>${fmtAmt(r.amount_requested)}</td>
-      <td><span class="amt-payable">${fmtAmt(r.amount_payable)}</span>${diffHtml}</td>
-      <td><span class="badge ${badgeClass(r.rule_status)}">${r.rule_status}</span></td>
-      <td>${flagsHtml}</td>
-      <td>${histHtml}</td>
-      <td style="display:flex;align-items:center;gap:4px">
-        <span class="badge bg-gray">${r.status}</span>
-        ${r._has_ocr ? '' : '<span title="OCR 미완료" style="font-size:10px;color:#f59e0b">⚠</span>'}
-      </td>
-    </tr>`;
-  }).join("");
-
-  updatePagination(data.length);
-}
-
-// ─── 페이지네이션 (심플) ──────────────────────────────────────────────────────
-function updatePagination(total) {
-  const pg = document.getElementById("pagination");
-  if (total <= 20) { pg.innerHTML = ""; return; }
-  pg.innerHTML = `<button class="pg-btn">‹</button><button class="pg-btn active">1</button><button class="pg-btn">›</button>`;
-}
-
-// ─── 필터 적용 ────────────────────────────────────────────────────────────────
-function applyFilters() {
-  const school = document.getElementById("school-filter").value;
-  const dateFrom = document.getElementById("date-from").value;
-  const dateTo = document.getElementById("date-to").value;
-
-  let data = allData;
-  if (currentFilter !== "all") data = data.filter(r => r.rule_status === currentFilter);
-  if (school) data = data.filter(r => r.school_type === school);
-  if (dateFrom) data = data.filter(r => fmtDate(r.applied_at) >= dateFrom);
-  if (dateTo) data = data.filter(r => fmtDate(r.applied_at) <= dateTo);
-
-  renderRows(data);
-}
-
-function filterTab(el, val) {
-  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-  el.classList.add("active");
-  currentFilter = val;
-  applyFilters();
-}
-
-// ─── 초기 로드 ───────────────────────────────────────────────────────────────
-loadData();
-</script>
-</body>
-</html>
+// ─── 행 렌더링 ──────────────────────────────────────────

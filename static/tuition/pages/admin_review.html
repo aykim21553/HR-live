@@ -140,6 +140,23 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
 .cb{display:flex;align-items:center;gap:9px;background:var(--low);border-radius:8px;padding:8px 12px;margin-bottom:10px;}
 .conf-trk{flex:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;}
 .cf{height:100%;border-radius:3px;transition:width .8s ease;}
+/* 첨부파일 뷰어 */
+.file-viewer-wrap{background:var(--low);border-radius:12px;border:1px solid var(--bd);overflow:hidden;margin-bottom:12px;}
+.file-viewer-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:1px solid var(--bd);}
+.file-viewer-title{font-size:12px;font-weight:800;color:var(--tx);display:flex;align-items:center;gap:6px;}
+.file-viewer-body{padding:0;min-height:80px;display:flex;align-items:center;justify-content:center;background:#f8f8f8;}
+.file-viewer-body img{max-width:100%;max-height:500px;object-fit:contain;display:block;}
+.file-viewer-body iframe{width:100%;height:500px;border:none;display:block;}
+.file-viewer-body .fv-empty{padding:32px;text-align:center;color:var(--so);font-size:12px;}
+.fv-modal{position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:900;display:none;align-items:center;justify-content:center;padding:20px;}
+.fv-modal.open{display:flex;}
+.fv-modal-inner{background:#fff;border-radius:14px;width:90vw;max-width:960px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;}
+.fv-modal-hdr{padding:12px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.fv-modal-hdr span{font-size:13px;font-weight:700;color:var(--tx);}
+.fv-modal-close{width:28px;height:28px;border-radius:50%;border:none;background:var(--low);cursor:pointer;font-size:15px;color:var(--so);display:flex;align-items:center;justify-content:center;}
+.fv-modal-content{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:12px;background:#f0f0f0;}
+.fv-modal-content img{max-width:100%;height:auto;}
+.fv-modal-content iframe{width:100%;height:75vh;border:none;}
 </style>
 </head>
 <body>
@@ -234,6 +251,28 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
           <h3 style="font-size:14px;font-weight:800;color:#7D5260">해외학교 추가 검토 사항</h3>
         </div>
         <div id="ov-reqs"></div>
+      </div>
+
+      <!-- 첨부 파일 뷰어 -->
+      <div class="divd"></div>
+      <div class="sec-lbl">첨부 파일 확인</div>
+      <div class="file-viewer-wrap" id="file-viewer-wrap">
+        <div class="file-viewer-header">
+          <div class="file-viewer-title">
+            <span>📎</span>
+            <span id="fv-filename">—</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-g" id="fv-expand-btn" onclick="openFileModal()" style="font-size:11px;padding:4px 11px;display:none">⛶ 전체화면</button>
+            <button class="btn btn-g" id="fv-download-btn" onclick="downloadAttachment()" style="font-size:11px;padding:4px 11px;display:none">⬇ 다운로드</button>
+          </div>
+        </div>
+        <div class="file-viewer-body" id="file-viewer-body">
+          <div class="fv-empty" id="fv-empty-msg">
+            <div style="font-size:24px;margin-bottom:6px">📄</div>
+            <div>첨부 파일을 불러오는 중입니다…</div>
+          </div>
+        </div>
       </div>
 
       <div style="display:flex;justify-content:flex-end">
@@ -415,6 +454,15 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
   </main>
 </div>
 
+<div class="fv-modal" id="fv-modal" onclick="if(event.target===this)closeFvModal()">
+  <div class="fv-modal-inner">
+    <div class="fv-modal-hdr">
+      <span id="fv-modal-title">첨부 파일</span>
+      <button class="fv-modal-close" onclick="closeFvModal()">✕</button>
+    </div>
+    <div class="fv-modal-content" id="fv-modal-content"></div>
+  </div>
+</div>
 <script>
 /* Config */
 // 로컬(localhost)이면 포트 8765, Render 배포면 같은 origin 사용
@@ -975,13 +1023,129 @@ function showStep(n){
 function mkBadge(s){const m={'자동승인후보':'bg','보완필요':'bv','수기검토필요':'ba','반려':'br'};return `<span class="bsm ${m[s]||'bz'}">${esc(s)}</span>`;}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// OCR 신뢰도 등급 — renderStep1()에서 호출
+// OCR 신뢰도 등급 반환
 function ocrGrade(conf){
   if(conf>=90) return{label:`매우 높음 ${conf}%`,bar:'linear-gradient(90deg,#0a5a3c,#0d6b47)',bg:'rgba(13,107,71,0.1)',color:'#0d6b47'};
   if(conf>=75) return{label:`높음 ${conf}%`,bar:'linear-gradient(90deg,#a14000,#FF6900)',bg:'rgba(255,105,0,0.1)',color:'#FF6900'};
   if(conf>=55) return{label:`보통 ${conf}%`,bar:'linear-gradient(90deg,#7a5000,#a16400)',bg:'rgba(201,120,0,0.1)',color:'#a16400'};
   return{label:`낮음 ${conf}%`,bar:'linear-gradient(90deg,#7a1010,#9b1b1b)',bg:'rgba(186,26,26,0.1)',color:'#9b1b1b'};
 }
+
+/* ── 첨부 파일 뷰어 ── */
+let _fvObjectUrl = null;
+let _fvFilename  = '';
+
+async function loadAttachment(){
+  const bodyEl   = document.getElementById('file-viewer-body');
+  const emptyEl  = document.getElementById('fv-empty-msg');
+  const fnEl     = document.getElementById('fv-filename');
+  const expandBtn   = document.getElementById('fv-expand-btn');
+  const downloadBtn = document.getElementById('fv-download-btn');
+
+  // 1) appRec에 file_data가 있으면 바로 렌더
+  const fd = appRec?.file_data || '';
+  const fn = appRec?.filename  || '';
+
+  if(fd){
+    _fvFilename = fn;
+    fnEl.textContent = fn || '첨부 파일';
+    _renderFileData(fd, fn, bodyEl);
+    expandBtn.style.display  = '';
+    downloadBtn.style.display= '';
+    return;
+  }
+
+  // 2) API로 파일 가져오기 시도
+  if(apiLive && APP_ID){
+    try{
+      const r = await fetch(`${ADMIN_API}/${encodeURIComponent(APP_ID)}/file`, {signal: AbortSignal.timeout(8000)});
+      if(r.ok){
+        const blob = await r.blob();
+        const disp = r.headers.get('Content-Disposition') || '';
+        const mName = disp.match(/filename="([^"]+)"/);
+        _fvFilename = mName ? mName[1] : (fn || '첨부파일');
+        fnEl.textContent = _fvFilename;
+        if(_fvObjectUrl) URL.revokeObjectURL(_fvObjectUrl);
+        _fvObjectUrl = URL.createObjectURL(blob);
+        _renderBlobUrl(_fvObjectUrl, blob.type, bodyEl);
+        expandBtn.style.display  = '';
+        downloadBtn.style.display= '';
+        return;
+      }
+    }catch(e){console.warn('파일 로드 실패:',e);}
+  }
+
+  // 3) 첨부 없음 안내
+  fnEl.textContent = '첨부 파일 없음';
+  emptyEl.innerHTML = `<div style="font-size:24px;margin-bottom:6px">📎</div>
+    <div style="color:var(--so);font-size:12px">첨부 파일이 없거나 이전 신청 건입니다.</div>
+    <div style="font-size:11px;color:var(--so);margin-top:4px">신규 신청부터 첨부 파일이 저장됩니다.</div>`;
+}
+
+function _renderFileData(b64, fn, container){
+  let clean = b64;
+  let mtype = 'image/jpeg';
+  if(b64.startsWith('data:')){
+    const [hdr, data] = b64.split(',',2);
+    clean = data;
+    const m = hdr.match(/data:([^;]+)/);
+    if(m) mtype = m[1];
+  } else {
+    const fnLow = (fn||'').toLowerCase();
+    if(fnLow.endsWith('.pdf'))  mtype='application/pdf';
+    else if(fnLow.endsWith('.png'))  mtype='image/png';
+    else if(fnLow.endsWith('.gif'))  mtype='image/gif';
+    else if(fnLow.endsWith('.webp')) mtype='image/webp';
+  }
+  const raw  = Uint8Array.from(atob(clean), c=>c.charCodeAt(0));
+  const blob = new Blob([raw], {type: mtype});
+  if(_fvObjectUrl) URL.revokeObjectURL(_fvObjectUrl);
+  _fvObjectUrl = URL.createObjectURL(blob);
+  _renderBlobUrl(_fvObjectUrl, mtype, container);
+}
+
+function _renderBlobUrl(url, mtype, container){
+  const emptyEl = document.getElementById('fv-empty-msg');
+  if(emptyEl) emptyEl.style.display='none';
+  if(mtype === 'application/pdf'){
+    container.innerHTML = `<iframe src="${url}" style="width:100%;height:500px;border:none;"></iframe>`;
+  } else {
+    container.innerHTML = `<img src="${url}" alt="첨부 파일" style="max-width:100%;max-height:500px;display:block;object-fit:contain;cursor:zoom-in" onclick="openFileModal()">`;
+  }
+}
+
+function openFileModal(){
+  if(!_fvObjectUrl) return;
+  const modal   = document.getElementById('fv-modal');
+  const content = document.getElementById('fv-modal-content');
+  document.getElementById('fv-modal-title').textContent = _fvFilename || '첨부 파일';
+  const fn = (_fvFilename||'').toLowerCase();
+  if(fn.endsWith('.pdf')){
+    content.innerHTML = `<iframe src="${_fvObjectUrl}" style="width:100%;height:75vh;border:none;"></iframe>`;
+  } else {
+    content.innerHTML = `<img src="${_fvObjectUrl}" alt="첨부 파일" style="max-width:100%;height:auto;">`;
+  }
+  modal.classList.add('open');
+}
+
+function closeFvModal(){
+  document.getElementById('fv-modal').classList.remove('open');
+}
+
+function downloadAttachment(){
+  if(!_fvObjectUrl) return;
+  const a = document.createElement('a');
+  a.href = _fvObjectUrl;
+  a.download = _fvFilename || '첨부파일';
+  a.click();
+}
+
+// loadApp() 완료 후 첨부 파일 자동 로드
+const _origRenderAll = renderAll;
+renderAll = function(){
+  _origRenderAll();
+  loadAttachment();
+};
 </script>
 </body>
 </html>

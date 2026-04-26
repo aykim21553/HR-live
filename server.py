@@ -542,6 +542,8 @@ def llm_score_one(
 class TuitionSubmitBody(BaseModel):
     employee_id:  str
     ocr:          dict          # OCR 추출 결과 전체
+    file_data:    str = ""      # base64 인코딩된 원본 첨부 파일
+    filename:     str = ""      # 첨부 파일 원본명 (확장자로 미디어 타입 추론)
 
 
 @app.post("/api/tuition/submit")
@@ -561,6 +563,8 @@ def tuition_submit(body: TuitionSubmitBody):
         "admin_action": None,
         "admin_comment":"",
         "draft_text":   None,
+        "filename":     body.filename,
+        "file_data":    body.file_data,   # base64 저장 (첨부파일 뷰어용)
     }
     with _apps_lock:
         apps = _load_apps()
@@ -670,6 +674,82 @@ def generate_draft_api(app_id: str):
                 break
         _save_apps(apps2)
     return {"draft_text": draft}
+
+
+@app.get("/api/tuition/admin/applications/{app_id}/file")
+def get_application_file(app_id: str):
+    """첨부 파일 서빙 (base64 → binary Response)"""
+    import base64 as _b64
+    from fastapi.responses import Response as _Resp
+    with _apps_lock:
+        apps = _load_apps()
+    rec = next((a for a in apps if a["id"] == app_id), None)
+    if not rec:
+        raise HTTPException(status_code=404, detail="신청 없음")
+    fd = rec.get("file_data", "")
+    fn = rec.get("filename", "")
+    if not fd:
+        raise HTTPException(status_code=404, detail="첨부 파일 없음")
+    if "," in fd:
+        fd = fd.split(",", 1)[1]
+    try:
+        raw = _b64.b64decode(fd)
+    except Exception:
+        raise HTTPException(status_code=422, detail="파일 디코딩 실패")
+    fn_lower = fn.lower()
+    if fn_lower.endswith(".pdf"):
+        mt = "application/pdf"
+    elif fn_lower.endswith(".png"):
+        mt = "image/png"
+    elif fn_lower.endswith(".gif"):
+        mt = "image/gif"
+    elif fn_lower.endswith(".webp"):
+        mt = "image/webp"
+    else:
+        mt = "image/jpeg"
+    return _Resp(content=raw, media_type=mt,
+                 headers={"Content-Disposition": f'inline; filename="{fn or "attachment"}"'})
+
+
+class BatchDraftBody(BaseModel):
+    app_ids: list  # 처리할 app id 목록 (비어있으면 자동승인후보 전체)
+
+
+@app.post("/api/tuition/admin/batch-draft")
+def batch_draft(body: BatchDraftBody):
+    """일괄 기안문 생성 — 자동승인후보 대상"""
+    with _apps_lock:
+        apps = _load_apps()
+
+    if body.app_ids:
+        targets = [a for a in apps if a["id"] in body.app_ids]
+    else:
+        targets = [a for a in apps
+                   if (a.get("cross_ref") or {}).get("verdict") == "자동승인후보"]
+
+    results = []
+    for app_rec in targets:
+        ocr = app_rec.get("ocr", {})
+        cr  = app_rec.get("cross_ref", {})
+        emp = cr.get("employee_name") or app_rec.get("employee_id", "")
+        draft = _build_draft_template(app_rec["id"], emp, app_rec.get("employee_id",""), ocr, cr)
+        results.append({
+            "id": app_rec["id"],
+            "employee_name": emp,
+            "child_name": ocr.get("child_name","—"),
+            "verdict": cr.get("verdict","—"),
+            "draft_text": draft,
+        })
+
+    with _apps_lock:
+        apps2 = _load_apps()
+        id_map = {r["id"]: r["draft_text"] for r in results}
+        for a in apps2:
+            if a["id"] in id_map:
+                a["draft_text"] = id_map[a["id"]]
+        _save_apps(apps2)
+
+    return {"count": len(results), "drafts": results}
 
 
 def _build_draft_template(app_id, emp_name, emp_id, ocr, cr):
@@ -2260,74 +2340,4 @@ async def send_notification(req: NotificationRequest):
     if not smtp_user:
         return {"ok": False, "error": "발신 Gmail 주소가 입력되지 않았습니다."}
     if not req.recipients:
-        return {"ok": False, "error": "수신자 이메일 주소가 없습니다."}
-
-    # 수신자와 이름 페어링 (수가 다르면 수신자 순환)
-    sent = 0
-    errors = []
-    pairs = list(zip(
-        req.candidates if req.candidates else [f"지원자{i+1}" for i in range(len(req.recipients))],
-        req.recipients
-    ))
-    # 수신자가 이름보다 많으면 나머지도 처리
-    if len(req.recipients) > len(req.candidates):
-        for i in range(len(req.candidates), len(req.recipients)):
-            pairs.append((f"지원자{i+1}", req.recipients[i]))
-
-    try:
-        # 연결 한 번으로 전체 발송
-        with smtplib.SMTP(smtp_host, smtp_port) as srv:
-            srv.ehlo()
-            srv.starttls()
-            srv.ehlo()
-            srv.login(smtp_user, smtp_pass)
-
-            for name, to_addr in pairs:
-                try:
-                    msg = MIMEMultipart("alternative")
-                    msg["From"] = smtp_user
-                    msg["To"] = to_addr
-                    msg["Subject"] = req.subject or "[채용] 합격 안내"
-                    body_text = (req.body or "").replace("{이름}", name)
-                    msg.attach(MIMEText(body_text, "plain", "utf-8"))
-                    srv.send_message(msg)
-                    sent += 1
-                except Exception as e:
-                    errors.append(f"{to_addr}: {str(e)}")
-
-    except smtplib.SMTPAuthenticationError:
-        return {"ok": False, "error": "Gmail 인증 실패. 앱 비밀번호를 확인해주세요. (일반 비밀번호가 아닌 앱 비밀번호 16자리 필요)"}
-    except Exception as e:
-        return {"ok": False, "error": f"SMTP 연결 오류: {str(e)}"}
-
-    if errors and sent == 0:
-        return {"ok": False, "sent": 0, "error": errors[0]}
-    return {"ok": True, "sent": sent, "errors": errors}
-
-
-# ── 헬스체크 ──────────────────────────────────────────────────
-
-@app.get("/api/health")
-def health():
-    return {
-        "ok": True,
-        "openai_configured": bool(ANTHROPIC_API_KEY),
-        "anthropic_configured": bool(ANTHROPIC_API_KEY),
-        "model": CHAT_MODEL,
-        "embed": "TF-IDF (local)",
-    }
-
-
-# ── 정적 파일 (마지막에 마운트) ───────────────────────────────
-# 학자금 튜이션 웹앱 서빙 (/tuition/ 접두사)
-_TUITION_WEBAPP = ROOT / "static" / "tuition"
-if _TUITION_WEBAPP.exists():
-    app.mount("/tuition", StaticFiles(directory=str(_TUITION_WEBAPP)), name="tuition")
-
-# cursor/ 정적 파일 (catch-all — 반드시 마지막)
-app.mount("/", StaticFiles(directory=str(ROOT / "static"), html=True), name="site")
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("server:app", host="127.0.0.1", port=8765, reload=True)
+ 

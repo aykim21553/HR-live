@@ -487,7 +487,9 @@ async function submitApp(){
           ocr: ocrData,
           file_sha256: sha256,
           source_file_type: sourceType,
-          application_hints: {}
+          application_hints: {},
+          file_data: imgB64 || '',
+          filename: uploadedFile?.name || ''
         })});
       if(r.ok){submitRes = await r.json(); id=submitRes.id; verdict=submitRes.verdict;}
     }catch(e){console.warn('Submit API 오류:',e);}
@@ -543,8 +545,4 @@ function ocrGrade(conf){
   if(conf>=90) return{label:`매우 높음 ${conf}%`,bar:'linear-gradient(90deg,#0a5a3c,#0d6b47)',bg:'rgba(13,107,71,0.1)',color:'#0d6b47'};
   if(conf>=75) return{label:`높음 ${conf}%`,bar:'linear-gradient(90deg,#a14000,#FF6900)',bg:'rgba(255,105,0,0.1)',color:'#FF6900'};
   if(conf>=55) return{label:`보통 ${conf}%`,bar:'linear-gradient(90deg,#7a5000,#a16400)',bg:'rgba(201,120,0,0.1)',color:'#a16400'};
-  return{label:`낮음 ${conf}%`,bar:'linear-gradient(90deg,#7a1010,#9b1b1b)',bg:'rgba(186,26,26,0.1)',color:'#9b1b1b'};
-}
-</script>
-</body>
-</html>
+  return{label:`낮음 ${conf}%`,bar:'linear-gradient(90deg,#7a1010,#9b
