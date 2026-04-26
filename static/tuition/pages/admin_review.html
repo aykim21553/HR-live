@@ -206,6 +206,11 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
           📎 첨부파일 바로보기
         </button>
         <div id="si-attach-status" style="font-size:10px;color:var(--so);text-align:center;margin-top:4px"></div>
+        <a href="uploads.html"
+          style="display:flex;width:100%;margin-top:8px;padding:8px 10px;background:#fff;border:1.5px solid var(--bd);border-radius:8px;color:var(--mu);font-size:11px;font-weight:700;text-decoration:none;align-items:center;justify-content:center;gap:5px;transition:.15s;"
+          onmouseover="this.style.background='var(--low)';this.style.color='var(--org)'" onmouseout="this.style.background='#fff';this.style.color='var(--mu)'">
+          📂 전체 보관함
+        </a>
       </div>
     </div>
   </nav>
@@ -1050,10 +1055,30 @@ async function loadAttachment(){
   const expandBtn   = document.getElementById('fv-expand-btn');
   const downloadBtn = document.getElementById('fv-download-btn');
 
-  // 1) appRec에 file_data가 있으면 바로 렌더
-  const fd = appRec?.file_data || '';
-  const fn = appRec?.filename  || '';
+  // 1) 신규 방식: file_token이 있으면 디스크에서 직접 서빙
+  const tok = appRec?.file_token || '';
+  const fn  = appRec?.filename   || '';
+  if(tok){
+    try{
+      const r = await fetch(`${_API_ORIGIN}/api/tuition/admin/uploads/${encodeURIComponent(tok)}`, {signal: AbortSignal.timeout(8000)});
+      if(r.ok){
+        const blob = await r.blob();
+        const disp = r.headers.get('Content-Disposition') || '';
+        const mName = disp.match(/filename="([^"]+)"/);
+        _fvFilename = mName ? mName[1] : (fn || '첨부파일');
+        fnEl.textContent = _fvFilename;
+        if(_fvObjectUrl) URL.revokeObjectURL(_fvObjectUrl);
+        _fvObjectUrl = URL.createObjectURL(blob);
+        _renderBlobUrl(_fvObjectUrl, blob.type, bodyEl);
+        expandBtn.style.display  = '';
+        downloadBtn.style.display= '';
+        return;
+      }
+    }catch(e){console.warn('토큰 파일 로드 실패:',e);}
+  }
 
+  // 2) 레거시: appRec에 file_data(base64)가 있으면 바로 렌더
+  const fd = appRec?.file_data || '';
   if(fd){
     _fvFilename = fn;
     fnEl.textContent = fn || '첨부 파일';
@@ -1063,7 +1088,7 @@ async function loadAttachment(){
     return;
   }
 
-  // 2) API로 파일 가져오기 시도
+  // 3) /file 엔드포인트로 폴백
   if(apiLive && APP_ID){
     try{
       const r = await fetch(`${ADMIN_API}/${encodeURIComponent(APP_ID)}/file`, {signal: AbortSignal.timeout(8000)});
@@ -1083,11 +1108,11 @@ async function loadAttachment(){
     }catch(e){console.warn('파일 로드 실패:',e);}
   }
 
-  // 3) 첨부 없음 안내
+  // 4) 첨부 없음 안내 + 보관함 링크
   fnEl.textContent = '첨부 파일 없음';
   emptyEl.innerHTML = `<div style="font-size:24px;margin-bottom:6px">📎</div>
-    <div style="color:var(--so);font-size:12px">첨부 파일이 없거나 이전 신청 건입니다.</div>
-    <div style="font-size:11px;color:var(--so);margin-top:4px">신규 신청부터 첨부 파일이 저장됩니다.</div>`;
+    <div style="color:var(--so);font-size:12px">이 신청건에 연결된 첨부 파일이 없습니다.</div>
+    <div style="font-size:11px;color:var(--so);margin-top:4px">전체 보관함을 확인하려면 <a href="uploads.html" style="color:var(--org);font-weight:700;text-decoration:underline">📂 첨부파일 보관함</a></div>`;
 }
 
 function _renderFileData(b64, fn, container){

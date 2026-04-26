@@ -43,6 +43,8 @@ ROOT = Path(__file__).resolve().parent
 _TUITION_DATA  = ROOT / "data"
 _DB_FILE       = _TUITION_DATA / "payment_history_full.json"   # 7년 이력 DB
 _APPS_FILE     = _TUITION_DATA / "applications.json"           # 신청 접수 store
+_UPLOADS_DIR   = _TUITION_DATA / "uploads"                     # 첨부파일 영속 저장소
+_UPLOADS_MANIFEST = _TUITION_DATA / "uploads_manifest.json"    # 토큰 → 메타 매니페스트
 
 TUITION_LIMITS         = {"유치원": 300_000,   "고등학교": 1_000_000,  "대학교": 3_200_000}
 TUITION_OVERSEAS_LIMITS= {"유치원": 500_000,   "고등학교": 2_000_000,  "대학교": 6_000_000}
@@ -57,10 +59,133 @@ def _load_db() -> dict:
 
 _company_db: dict = _load_db()   # 서버 시작 시 1회 로드
 
-# ── 첨부파일 임시 캐시 (메모리, 토큰 기반) ───────────────────
+# ══════════════════════════════════════════════════════════════
+# 첨부파일 영속 저장 — 메모리 캐시 → 디스크 저장으로 전환
+# (서버 재시작/Render 슬립에도 안전, 보관함 UI 제공)
+# ══════════════════════════════════════════════════════════════
 import threading
-_UPLOAD_CACHE: dict = {}   # {token: {file_data: str, filename: str}}
 _UPLOAD_LOCK  = threading.Lock()
+_UPLOAD_CACHE: dict = {}   # 레거시 호환용 (사용 안 함)
+
+def _ext_from_filename(name: str) -> str:
+    if not name or "." not in name:
+        return "bin"
+    ext = name.rsplit(".", 1)[-1].lower().strip()
+    return ext if ext.isalnum() and len(ext) <= 6 else "bin"
+
+def _media_type_for_ext(ext: str) -> str:
+    return {
+        "pdf": "application/pdf", "png": "image/png", "gif": "image/gif",
+        "webp": "image/webp", "jpg": "image/jpeg", "jpeg": "image/jpeg",
+    }.get(ext.lower(), "application/octet-stream")
+
+def _load_uploads_manifest() -> dict:
+    if _UPLOADS_MANIFEST.exists():
+        try:
+            with open(_UPLOADS_MANIFEST, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def _save_uploads_manifest(m: dict) -> None:
+    _UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    with open(_UPLOADS_MANIFEST, "w", encoding="utf-8") as f:
+        json.dump(m, f, ensure_ascii=False, indent=2)
+
+def _save_upload_to_disk(data: bytes, filename: str, employee_id: str = "") -> dict:
+    """업로드 파일을 디스크에 저장하고 매니페스트에 등록. 메타 dict 반환."""
+    import uuid as _uuid
+    _UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    token = _uuid.uuid4().hex[:8].upper()
+    ext   = _ext_from_filename(filename)
+    dest  = _UPLOADS_DIR / f"{token}.{ext}"
+    with open(dest, "wb") as f:
+        f.write(data)
+    meta = {
+        "token":         token,
+        "filename":      filename or f"{token}.{ext}",
+        "ext":           ext,
+        "size":          len(data),
+        "uploaded_at":   datetime.now().isoformat(),
+        "employee_id":   employee_id or "",
+        "linked_app_id": None,
+    }
+    with _UPLOAD_LOCK:
+        m = _load_uploads_manifest()
+        m[token] = meta
+        _save_uploads_manifest(m)
+    return meta
+
+def _link_upload_to_app(token: str, app_id: str, employee_id: str = ""):
+    """업로드 토큰 → 신청건 연결."""
+    if not token:
+        return None
+    with _UPLOAD_LOCK:
+        m = _load_uploads_manifest()
+        meta = m.get(token)
+        if not meta:
+            return None
+        meta["linked_app_id"] = app_id
+        if employee_id:
+            meta["employee_id"] = employee_id
+        meta["linked_at"] = datetime.now().isoformat()
+        _save_uploads_manifest(m)
+        return meta
+
+def _read_upload_bytes(token: str):
+    """토큰으로 디스크 파일 read. (bytes, filename, mediatype) 또는 None."""
+    with _UPLOAD_LOCK:
+        m = _load_uploads_manifest()
+        meta = m.get(token)
+    if not meta:
+        return None
+    ext   = meta.get("ext") or "bin"
+    fpath = _UPLOADS_DIR / f"{token}.{ext}"
+    if not fpath.exists():
+        return None
+    with open(fpath, "rb") as f:
+        return f.read(), meta.get("filename") or f"{token}.{ext}", _media_type_for_ext(ext)
+
+def _migrate_legacy_inline_files() -> None:
+    """applications.json의 레거시 base64 file_data → 디스크로 (1회 마이그레이션)."""
+    import base64 as _b64
+    if not _APPS_FILE.exists():
+        return
+    try:
+        with open(_APPS_FILE, encoding="utf-8") as f:
+            apps = json.load(f)
+    except Exception:
+        return
+    changed = False
+    for a in apps:
+        if a.get("file_token"):
+            continue
+        fd = a.get("file_data") or ""
+        fn = a.get("filename")  or ""
+        if not fd:
+            continue
+        if "," in fd:
+            fd = fd.split(",", 1)[1]
+        try:
+            raw = _b64.b64decode(fd)
+        except Exception:
+            continue
+        if len(raw) < 300:
+            continue  # placeholder는 스킵
+        meta = _save_upload_to_disk(raw, fn or "legacy_attachment", a.get("employee_id", ""))
+        _link_upload_to_app(meta["token"], a.get("id", ""), a.get("employee_id", ""))
+        a["file_token"] = meta["token"]
+        a["filename"]   = fn or meta["filename"]
+        changed = True
+    if changed:
+        with open(_APPS_FILE, "w", encoding="utf-8") as f:
+            json.dump(apps, f, ensure_ascii=False, indent=2, default=str)
+
+try:
+    _migrate_legacy_inline_files()
+except Exception as _mig_err:
+    print(f"[uploads] legacy migration skipped: {_mig_err}")
 
 # ── 신청 store 읽기/쓰기 ──────────────────────────────────────
 _apps_lock = threading.Lock()
@@ -558,32 +683,42 @@ class TuitionSubmitBody(BaseModel):
 
 
 @app.post("/api/tuition/attach")
-async def upload_attachment(file: UploadFile = File(...)):
-    """파일 선택 즉시 서버에 업로드 → 토큰 반환 (제출 시 file_token으로 참조)"""
-    import uuid, base64 as _b64x
-    data  = await file.read()
-    b64   = _b64x.b64encode(data).decode()
-    token = uuid.uuid4().hex[:8].upper()
-    with _UPLOAD_LOCK:
-        _UPLOAD_CACHE[token] = {"file_data": b64, "filename": file.filename or "attachment"}
-    return {"token": token, "size": len(data), "filename": file.filename}
+async def upload_attachment(file: UploadFile = File(...), employee_id: str = ""):
+    """파일 선택 즉시 디스크 영속 저장 → 토큰 반환 (재시작·캐시 휘발에 안전)."""
+    data = await file.read()
+    meta = _save_upload_to_disk(data, file.filename or "attachment", employee_id)
+    return {"token": meta["token"], "size": meta["size"], "filename": meta["filename"], "ext": meta["ext"]}
 
 
 @app.post("/api/tuition/submit")
 def tuition_submit(body: TuitionSubmitBody):
-    """직원이 신청 제출 → DB 대조 자동 실행 → applications.json 저장"""
-    import uuid, datetime as _dt
-    # 첨부파일 결정: 토큰 → 직접 base64 순으로 확인
-    fd = body.file_data
-    fn = body.filename
-    if body.file_token and not fd:
-        with _UPLOAD_LOCK:
-            cached = _UPLOAD_CACHE.pop(body.file_token, None)
-        if cached:
-            fd = cached["file_data"]
-            fn = fn or cached["filename"]
+    """직원 신청 제출 → 디스크 토큰 연결 → applications.json 저장 (base64 인라인 X)."""
+    import uuid, base64 as _b64x
+    fn    = body.filename or ""
+    token = body.file_token or ""
+
+    # 토큰 없는데 file_data(base64)만 온 경우 → 디스크에 저장하고 토큰 발급 (레거시 폴백)
+    if not token and body.file_data:
+        try:
+            raw = body.file_data
+            if "," in raw:
+                raw = raw.split(",", 1)[1]
+            decoded = _b64x.b64decode(raw)
+            if len(decoded) >= 300:
+                meta = _save_upload_to_disk(decoded, fn or "inline_attachment", body.employee_id)
+                token = meta["token"]
+                fn    = meta["filename"]
+        except Exception:
+            pass
+
     app_id  = "APP-" + datetime.now().strftime("%Y%m%d") + "-" + str(uuid.uuid4())[:6].upper()
     cross   = cross_reference(body.employee_id, body.ocr)
+
+    if token:
+        linked = _link_upload_to_app(token, app_id, body.employee_id)
+        if linked and not fn:
+            fn = linked.get("filename", "")
+
     record  = {
         "id":           app_id,
         "employee_id":  body.employee_id,
@@ -596,13 +731,13 @@ def tuition_submit(body: TuitionSubmitBody):
         "admin_comment":"",
         "draft_text":   None,
         "filename":     fn,
-        "file_data":    fd,   # base64 저장 (첨부파일 뷰어용)
+        "file_token":   token,   # 디스크 파일 참조 (신규 방식)
     }
     with _apps_lock:
         apps = _load_apps()
-        apps.insert(0, record)   # 최신순
+        apps.insert(0, record)
         _save_apps(apps)
-    return {"id": app_id, "verdict": cross["verdict"], "flags": cross["flags"]}
+    return {"id": app_id, "verdict": cross["verdict"], "flags": cross["flags"], "file_token": token}
 
 
 @app.get("/api/tuition/admin/applications")
@@ -710,7 +845,7 @@ def generate_draft_api(app_id: str):
 
 @app.get("/api/tuition/admin/applications/{app_id}/file")
 def get_application_file(app_id: str):
-    """첨부 파일 서빙 (base64 → binary Response)"""
+    """첨부 파일 서빙 — 1) file_token 디스크 우선, 2) 레거시 base64 fallback."""
     import base64 as _b64
     from fastapi.responses import Response as _Resp
     with _apps_lock:
@@ -718,6 +853,17 @@ def get_application_file(app_id: str):
     rec = next((a for a in apps if a["id"] == app_id), None)
     if not rec:
         raise HTTPException(status_code=404, detail="신청 없음")
+
+    # 1) 신규 방식: file_token으로 디스크 조회
+    token = rec.get("file_token") or ""
+    if token:
+        loaded = _read_upload_bytes(token)
+        if loaded:
+            raw, fname, mt = loaded
+            return _Resp(content=raw, media_type=mt,
+                         headers={"Content-Disposition": f'inline; filename="{fname}"'})
+
+    # 2) 레거시: applications.json 인라인 base64
     fd = rec.get("file_data", "")
     fn = rec.get("filename", "")
     if not fd:
@@ -741,6 +887,58 @@ def get_application_file(app_id: str):
         mt = "image/jpeg"
     return _Resp(content=raw, media_type=mt,
                  headers={"Content-Disposition": f'inline; filename="{fn or "attachment"}"'})
+
+
+# ══════════════════════════════════════════════════════════════
+# 첨부파일 보관함 — 디스크 저장 전체 업로드 조회/서빙
+# ══════════════════════════════════════════════════════════════
+
+@app.get("/api/tuition/admin/uploads")
+def list_uploads():
+    """관리자: 디스크 저장 첨부파일 전체 목록 (최신순). 통계 포함."""
+    with _UPLOAD_LOCK:
+        m = _load_uploads_manifest()
+    items = list(m.values())
+    items.sort(key=lambda x: x.get("uploaded_at", ""), reverse=True)
+    return {
+        "total":  len(items),
+        "linked": sum(1 for x in items if x.get("linked_app_id")),
+        "orphan": sum(1 for x in items if not x.get("linked_app_id")),
+        "items":  items,
+    }
+
+
+@app.get("/api/tuition/admin/uploads/{token}")
+def serve_upload_by_token(token: str):
+    """관리자: 토큰으로 첨부파일 직접 서빙."""
+    from fastapi.responses import Response as _Resp
+    loaded = _read_upload_bytes(token.upper())
+    if not loaded:
+        raise HTTPException(status_code=404, detail="첨부 파일 없음")
+    raw, fname, mt = loaded
+    return _Resp(content=raw, media_type=mt,
+                 headers={"Content-Disposition": f'inline; filename="{fname}"'})
+
+
+@app.delete("/api/tuition/admin/uploads/{token}")
+def delete_upload(token: str):
+    """관리자: 보관함에서 첨부파일 영구 삭제 (디스크 + 매니페스트)."""
+    token = token.upper()
+    with _UPLOAD_LOCK:
+        m = _load_uploads_manifest()
+        meta = m.get(token)
+        if not meta:
+            raise HTTPException(status_code=404, detail="토큰 없음")
+        ext   = meta.get("ext") or "bin"
+        fpath = _UPLOADS_DIR / f"{token}.{ext}"
+        try:
+            if fpath.exists():
+                fpath.unlink()
+        except Exception:
+            pass
+        del m[token]
+        _save_uploads_manifest(m)
+    return {"ok": True, "token": token}
 
 
 class BatchDraftBody(BaseModel):
