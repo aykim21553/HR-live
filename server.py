@@ -2362,7 +2362,29 @@ async def send_notification(req: NotificationRequest):
     return {"ok": True, "sent": sent, "failed": failed}
 
 
-# ══════════════════════════════════════════════════════════════
-# 정적 파일 서빙 (반드시 모든 API 라우트 등록 후 마지막에)
-# ══════════════════════════════════════════════════════════════
+# ==============================================
+# 헬스체크
+# ==============================================
+@app.get("/api/health")
+def health():
+    return {
+        "ok": bool(ANTHROPIC_API_KEY),
+        "openai_configured": bool(ANTHROPIC_API_KEY),
+        "anthropic_configured": bool(ANTHROPIC_API_KEY),
+        "model": CHAT_MODEL,
+        "embed": "TF-IDF (local)",
+    }
+
+
+# ==============================================
+# 정적 파일 서빙 (모든 API 라우트 후 마지막에)
+# ==============================================
+_TUITION_STATIC = ROOT / "static" / "tuition"
+if _TUITION_STATIC.exists():
+    app.mount("/tuition", StaticFiles(directory=str(_TUITION_STATIC)), name="tuition")
+
 app.mount("/", StaticFiles(directory=str(ROOT / "static"), html=True), name="static")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("server:app", host="127.0.0.1", port=8765, reload=True)
