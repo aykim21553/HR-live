@@ -238,7 +238,7 @@ const _API_ORIGIN = (location.hostname==='127.0.0.1'||location.hostname==='local
 const API_BASE   = _API_ORIGIN + '/api';
 const SUBMIT_URL = _API_ORIGIN + '/api/tuition/submit';
 const OCR_URL    = _API_ORIGIN + '/api/ocr-invoice';
-let apiLive=false, uploadedFile=null, imgB64=null, ocrData=null, appId=null;
+let apiLive=false, uploadedFile=null, imgB64=null, ocrData=null, appId=null, _fileToken=null;
 
 // Init
 document.getElementById('dash-link').href=location.protocol==='file:'?'../../../../../../dashboard.html':'/dashboard.html';
@@ -276,7 +276,7 @@ function onFile(e){const f=e.target.files[0];if(f)handleFile(f);}
 function onDrop(e){e.preventDefault();document.getElementById('upload-zone').classList.remove('over');const f=e.dataTransfer.files[0];if(f)handleFile(f);}
 
 async function handleFile(file){
-  uploadedFile=file;imgB64=null;
+  uploadedFile=file;imgB64=null;_fileToken=null;
   document.getElementById('uicon').textContent='task';
   document.getElementById('utitle').textContent=file.name;
   const prev=document.getElementById('doc-prev'),canvas=document.getElementById('prev-canvas'),img=document.getElementById('prev-img'),badge=document.getElementById('prev-badge');
@@ -290,6 +290,12 @@ async function handleFile(file){
     imgB64=await fileToB64(file);
   }
   document.getElementById('ocr-btn').disabled=false;
+  // 파일 선택 즉시 서버에 업로드 → 토큰 저장 (제출 시 안정적 첨부)
+  try{
+    const fd=new FormData(); fd.append('file',file);
+    const r=await fetch('/api/tuition/attach',{method:'POST',body:fd,signal:AbortSignal.timeout(30000)});
+    if(r.ok){const j=await r.json();_fileToken=j.token||null;}
+  }catch(e){console.warn('[attach] 파일 사전 업로드 실패:',e.message);}
 }
 // 이미지 압축 헬퍼 — OCR API 전송 전 크기 축소 (속도 향상)
 function compressCanvas(srcCanvas, maxPx=800, quality=0.78){
@@ -329,7 +335,7 @@ async function fileToB64(file){
     r.readAsDataURL(file);
   });
 }
-function resetUpload(){uploadedFile=null;imgB64=null;document.getElementById('finput').value='';document.getElementById('uicon').textContent='upload_file';document.getElementById('utitle').textContent='고지서 파일을 여기에 드래그하거나 클릭';document.getElementById('doc-prev').style.display='none';document.getElementById('ocr-btn').disabled=true;}
+function resetUpload(){uploadedFile=null;imgB64=null;_fileToken=null;document.getElementById('finput').value='';document.getElementById('uicon').textContent='upload_file';document.getElementById('utitle').textContent='고지서 파일을 여기에 드래그하거나 클릭';document.getElementById('doc-prev').style.display='none';document.getElementById('ocr-btn').disabled=true;}
 
 async function startOcr(){
   goStep(2);
@@ -489,7 +495,8 @@ async function submitApp(){
           source_file_type: sourceType,
           application_hints: {},
           file_data: imgB64 || '',
-          filename: uploadedFile?.name || ''
+          filename: uploadedFile?.name || '',
+          file_token: _fileToken || ''
         })});
       if(r.ok){submitRes = await r.json(); id=submitRes.id; verdict=submitRes.verdict;}
     }catch(e){console.warn('Submit API 오류:',e);}
@@ -545,4 +552,8 @@ function ocrGrade(conf){
   if(conf>=90) return{label:`매우 높음 ${conf}%`,bar:'linear-gradient(90deg,#0a5a3c,#0d6b47)',bg:'rgba(13,107,71,0.1)',color:'#0d6b47'};
   if(conf>=75) return{label:`높음 ${conf}%`,bar:'linear-gradient(90deg,#a14000,#FF6900)',bg:'rgba(255,105,0,0.1)',color:'#FF6900'};
   if(conf>=55) return{label:`보통 ${conf}%`,bar:'linear-gradient(90deg,#7a5000,#a16400)',bg:'rgba(201,120,0,0.1)',color:'#a16400'};
-  return{label:`낮음 ${conf}%`,bar:'linear-gradient(90deg,#7a1010,#9b
+  return{label:`낮음 ${conf}%`,bar:'linear-gradient(90deg,#7a1010,#9b1b1b)',bg:'rgba(186,26,26,0.1)',color:'#9b1b1b'};
+}
+</script>
+</body>
+</html>

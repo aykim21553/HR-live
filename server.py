@@ -57,8 +57,12 @@ def _load_db() -> dict:
 
 _company_db: dict = _load_db()   # 서버 시작 시 1회 로드
 
-# ── 신청 store 읽기/쓰기 ──────────────────────────────────────
+# ── 첨부파일 임시 캐시 (메모리, 토큰 기반) ───────────────────
 import threading
+_UPLOAD_CACHE: dict = {}   # {token: {file_data: str, filename: str}}
+_UPLOAD_LOCK  = threading.Lock()
+
+# ── 신청 store 읽기/쓰기 ──────────────────────────────────────
 _apps_lock = threading.Lock()
 
 def _load_apps() -> list:
@@ -548,14 +552,36 @@ def llm_score_one(
 class TuitionSubmitBody(BaseModel):
     employee_id:  str
     ocr:          dict          # OCR 추출 결과 전체
-    file_data:    str = ""      # base64 인코딩된 원본 첨부 파일
+    file_data:    str = ""      # base64 인코딩된 원본 첨부 파일 (직접 전달 시)
     filename:     str = ""      # 첨부 파일 원본명 (확장자로 미디어 타입 추론)
+    file_token:   str = ""      # 사전 업로드 토큰 (멀티파트 업로드 후 수령)
+
+
+@app.post("/api/tuition/attach")
+async def upload_attachment(file: UploadFile = File(...)):
+    """파일 선택 즉시 서버에 업로드 → 토큰 반환 (제출 시 file_token으로 참조)"""
+    import uuid, base64 as _b64x
+    data  = await file.read()
+    b64   = _b64x.b64encode(data).decode()
+    token = uuid.uuid4().hex[:8].upper()
+    with _UPLOAD_LOCK:
+        _UPLOAD_CACHE[token] = {"file_data": b64, "filename": file.filename or "attachment"}
+    return {"token": token, "size": len(data), "filename": file.filename}
 
 
 @app.post("/api/tuition/submit")
 def tuition_submit(body: TuitionSubmitBody):
     """직원이 신청 제출 → DB 대조 자동 실행 → applications.json 저장"""
     import uuid, datetime as _dt
+    # 첨부파일 결정: 토큰 → 직접 base64 순으로 확인
+    fd = body.file_data
+    fn = body.filename
+    if body.file_token and not fd:
+        with _UPLOAD_LOCK:
+            cached = _UPLOAD_CACHE.pop(body.file_token, None)
+        if cached:
+            fd = cached["file_data"]
+            fn = fn or cached["filename"]
     app_id  = "APP-" + datetime.now().strftime("%Y%m%d") + "-" + str(uuid.uuid4())[:6].upper()
     cross   = cross_reference(body.employee_id, body.ocr)
     record  = {
@@ -569,8 +595,8 @@ def tuition_submit(body: TuitionSubmitBody):
         "admin_action": None,
         "admin_comment":"",
         "draft_text":   None,
-        "filename":     body.filename,
-        "file_data":    body.file_data,   # base64 저장 (첨부파일 뷰어용)
+        "filename":     fn,
+        "file_data":    fd,   # base64 저장 (첨부파일 뷰어용)
     }
     with _apps_lock:
         apps = _load_apps()
