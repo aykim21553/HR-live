@@ -31,7 +31,7 @@
     "cross_ref": {
       "employee_found": true,
       "employee_name": "박지윤",
-      "employee_dept": "인사혁신지원실",
+      "employee_dept": "혁신지원실",
       "employee_join_date": "2017-03-02",
       "child_found": false,
       "child_registered": null,
@@ -57,7 +57,7 @@
       "rule_checks": {
         "직원 재직 확인": {
           "passed": true,
-          "reason": "EMP001 · 박지윤 (인사혁신지원실)"
+          "reason": "EMP001 · 박지윤 (혁신지원실)"
         },
         "자녀 등록 확인": {
           "passed": false,
@@ -93,7 +93,9 @@
     },
     "admin_action": null,
     "admin_comment": "",
-    "draft_text": null
+    "draft_text": null,
+    "file_data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAABgSSURBVHhe7d0JlBxVvcfxf6p6evZ9MpNkJpNMEiAJIQlhCZCwhB0EZBEUWVRAQEXlgYoiIiAoKioqgoiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiA==",
+    "filename": "학자금납입확인서_한정윤.jpg"
   },
   {
     "id": "APP-20260414-395870",
@@ -127,7 +129,7 @@
     "cross_ref": {
       "employee_found": true,
       "employee_name": "박지윤",
-      "employee_dept": "인사혁신지원실",
+      "employee_dept": "혁신지원실",
       "employee_join_date": "2017-03-02",
       "child_found": false,
       "child_registered": null,
@@ -154,7 +156,7 @@
       "rule_checks": {
         "직원 재직 확인": {
           "passed": true,
-          "reason": "EMP001 · 박지윤 (인사혁신지원실)"
+          "reason": "EMP001 · 박지윤 (혁신지원실)"
         },
         "자녀 등록 확인": {
           "passed": false,
@@ -190,7 +192,9 @@
     },
     "admin_action": null,
     "admin_comment": "",
-    "draft_text": null
+    "draft_text": null,
+    "file_data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAABgSSURBVHhe7d0JlBxVvcfxf6p6evZ9MpNkJpNMEiAJIQlhCZCwhB0EZBEUWVRAQEXlgYoiIiAoKioqgoiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiA==",
+    "filename": "교육비납입확인서_김수빈.pdf"
   },
   {
     "id": "APP-20260414-C47D96",
@@ -224,7 +228,7 @@
     "cross_ref": {
       "employee_found": true,
       "employee_name": "박지윤",
-      "employee_dept": "인사혁신지원실",
+      "employee_dept": "혁신지원실",
       "employee_join_date": "2017-03-02",
       "child_found": true,
       "child_registered": {
@@ -548,7 +552,7 @@
       "rule_checks": {
         "직원 재직 확인": {
           "passed": true,
-          "reason": "EMP001 · 박지윤 (인사혁신지원실)"
+          "reason": "EMP001 · 박지윤 (혁신지원실)"
         },
         "자녀 등록 확인": {
           "passed": true,
@@ -585,7 +589,9 @@
     "admin_action": "partial",
     "admin_comment": "",
     "draft_text": "# 학자금 지원 신청 결재 기안\n\n---\n\n**수신:** 인사팀장\n\n**참조:** 재무팀장\n\n**제목:** 2026년 1분기 직원 학자금 지원 신청 승인 건\n\n**작성일:** 2026년 4월 14일\n\n**작성부서:** 인사팀 복지담당\n\n---\n\n## 본문\n\n### 1. 신청개요\n\n| 항목 | 내용 |\n|------|------|\n| 신청번호 | APP-20260414-C47D96 |\n| 신청자 | 박지윤 (EMP001) |\n| 수혜자 | 박하린 |\n| 학교명 | 미래유치원(유치원) |\n| 수혜기간 | 2026년 1분기~2분기 |\n\n### 2. 납부내역\n\n- 납부일: 2026년 4월 3일\n- 납부금액: **760,000원**\n\n### 3. 지원금액\n\n| 항목 | 금액 |\n|------|------|\n| 신청금액 | 760,000원 |\n| 지급한도액 | 300,000원 |\n| **지급예정금액** | **300,000원** |\n| 한도초과액 | 460,000원 |\n\n### 4. 처리의견\n\n본 신청은 자동승인 대상으로 판정되었으나, 학자금 지원 한도 규정에 따라 최대 지원액인 300,000원으로 조정하여 지급할 것을 **승인**하는 것으로 의견을 제출합니다.\n\n한도를 초과하는 460,000원에 대해서는 직원의 별도 부담으로 처리될 예정입니다.\n\n---\n\n**승인 요청**",
-    "processed_at": "2026-04-15T02:26:38.235969"
+    "processed_at": "2026-04-15T02:26:38.235969",
+    "file_data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAABgSSURBVHhe7d0JlBxVvcfxf6p6evZ9MpNkJpNMEiAJIQlhCZCwhB0EZBEUWVRAQEXlgYoiIiAoKioqgoiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiA==",
+    "filename": "학자금납입증명서_이서준.jpg"
   },
   {
     "id": "APP-20260414-4A5F31",
@@ -619,7 +625,7 @@
     "cross_ref": {
       "employee_found": true,
       "employee_name": "박지윤",
-      "employee_dept": "인사혁신지원실",
+      "employee_dept": "혁신지원실",
       "employee_join_date": "2017-03-02",
       "child_found": false,
       "child_registered": null,
@@ -646,7 +652,7 @@
       "rule_checks": {
         "직원 재직 확인": {
           "passed": true,
-          "reason": "EMP001 · 박지윤 (인사혁신지원실)"
+          "reason": "EMP001 · 박지윤 (혁신지원실)"
         },
         "자녀 등록 확인": {
           "passed": false,
@@ -683,6 +689,8 @@
     "admin_action": "rejected",
     "admin_comment": "",
     "draft_text": "```\n수신: 박지윤 (EMP001)\n\n참조: 인사부, 복지부\n\n제목: 학자금 지원 신청 결과 안내 (신청번호: APP-20260414-4A5F31)\n\n─────────────────────────────\n\n본문\n\n1. 신청개요\n   - 신청번호: APP-20260414-4A5F31\n   - 신청자: 박지윤 (EMP001)\n   - 수혜자: 김지윤\n   - 학교: 대한대학교 (대학교)\n   - 지원대상: 2026년 1학기\n\n2. 납부내역\n   - 납부일: 2026년 2월 20일\n   - 납부금액: 3,230,000원\n\n3. 지원금액\n   - 지급예정금액: 3,200,000원 (한도 적용)\n   - 초과액: 30,000원\n\n4. 처리의견\n   귀청의 학자금 지원 신청을 검토한 결과, 다음과 같은 사유로 지급이 불가하오니 \n   양해 부탁드립니다.\n\n   ① DB 확인 결과, 자녀(김지윤)의 정보가 회사 인사 DB에 등록되지 않은 상태입니다.\n   ② 회사 규정상 학자금 지원 한도(3,200,000원)를 초과하였습니다.\n   \n   향후 자녀정보 등록 후 재신청하실 경우 처리 가능하오니, \n   인사부(내선: _____)로 문의하시기 바랍니다.\n\n─────────────────────────────\n\n작성일: 2026년 4월 14일\n\n작성부서: 복지담당부\n```",
-    "processed_at": "2026-04-14T20:31:17.462195"
+    "processed_at": "2026-04-14T20:31:17.462195",
+    "file_data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAABgSSURBVHhe7d0JlBxVvcfxf6p6evZ9MpNkJpNMEiAJIQlhCZCwhB0EZBEUWVRAQEXlgYoiIiAoKioqgoiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiA==",
+    "filename": "교육비납입확인서_박하린.jpg"
   }
 ]

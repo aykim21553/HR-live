@@ -199,6 +199,14 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
       <div class="si-l">판정</div><div id="si-verdict">—</div>
       <div class="si-l">AI 결정</div><div id="si-decision" style="font-size:11px">—</div>
       <div class="si-l">신뢰도</div><div id="si-confidence" style="font-size:11px">—</div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bd);">
+        <button id="si-attach-btn" onclick="sidebarOpenAttach()"
+          style="width:100%;padding:9px 10px;background:var(--pale);border:1.5px solid var(--org);border-radius:8px;color:var(--org);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s;"
+          onmouseover="this.style.background='#ffe5cc'" onmouseout="this.style.background='var(--pale)'">
+          📎 첨부파일 바로보기
+        </button>
+        <div id="si-attach-status" style="font-size:10px;color:var(--so);text-align:center;margin-top:4px"></div>
+      </div>
     </div>
   </nav>
 
@@ -1138,6 +1146,27 @@ function downloadAttachment(){
   a.href = _fvObjectUrl;
   a.download = _fvFilename || '첨부파일';
   a.click();
+}
+
+function sidebarOpenAttach(){
+  const statusEl = document.getElementById('si-attach-status');
+  if(_fvObjectUrl){
+    // 이미 로드됨 → 바로 모달 열기
+    openFileModal();
+    statusEl.textContent = '';
+  } else {
+    // 아직 로드 안됨 → Step1으로 이동 후 로드
+    statusEl.textContent = '파일 로딩 중…';
+    showStep(1);
+    loadAttachment().then(()=>{
+      if(_fvObjectUrl){
+        openFileModal();
+        statusEl.textContent = '';
+      } else {
+        statusEl.textContent = '첨부파일 없음';
+      }
+    });
+  }
 }
 
 // loadApp() 완료 후 첨부 파일 자동 로드
