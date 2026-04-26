@@ -46,7 +46,7 @@ _APPS_FILE     = _TUITION_DATA / "applications.json"           # 신청 접수 s
 
 TUITION_LIMITS         = {"유치원": 300_000,   "고등학교": 1_000_000,  "대학교": 3_200_000}
 TUITION_OVERSEAS_LIMITS= {"유치원": 500_000,   "고등학교": 2_000_000,  "대학교": 6_000_000}
-TUITION_MAX_TERMS      = {"유치원": 12,         "고등학교": 12,          "대학교": 4}
+TUITION_MAX_TERMS      = {"유치원": 12,         "고등학교": 12,          "대학교": 8}   # 4년×2학기=8학기
 
 # ── 회사 DB 로드 ──────────────────────────────────────────────
 def _load_db() -> dict:
