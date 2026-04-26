@@ -2340,4 +2340,29 @@ async def send_notification(req: NotificationRequest):
     if not smtp_user:
         return {"ok": False, "error": "발신 Gmail 주소가 입력되지 않았습니다."}
     if not req.recipients:
- 
+        return {"ok": False, "error": "수신자 이메일이 없습니다."}
+
+    sent, failed = [], []
+    for to_addr in req.recipients:
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = req.subject or f"[HR Room] 채용 합격 안내"
+            msg["From"]    = smtp_user
+            msg["To"]      = to_addr
+            msg.attach(MIMEText(req.body or "", "plain", "utf-8"))
+
+            with smtplib.SMTP(smtp_host, smtp_port) as s:
+                s.starttls()
+                s.login(smtp_user, smtp_pass)
+                s.sendmail(smtp_user, [to_addr], msg.as_string())
+            sent.append(to_addr)
+        except Exception as ex:
+            failed.append({"email": to_addr, "error": str(ex)})
+
+    return {"ok": True, "sent": sent, "failed": failed}
+
+
+# ══════════════════════════════════════════════════════════════
+# 정적 파일 서빙 (반드시 모든 API 라우트 등록 후 마지막에)
+# ══════════════════════════════════════════════════════════════
+app.mount("/", StaticFiles(directory=str(ROOT / "static"), html=True), name="static")
