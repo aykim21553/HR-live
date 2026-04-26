@@ -241,7 +241,7 @@ const OCR_URL    = _API_ORIGIN + '/api/ocr-invoice';
 let apiLive=false, uploadedFile=null, imgB64=null, ocrData=null, appId=null, _fileToken=null;
 
 // Init
-document.getElementById('dash-link').href=location.protocol==='file:'?'../../../../../../dashboard.html':'/dashboard.html';
+document.getElementById('dash-link').href=location.protocol==='file:'?'../../../../../../dashboard.html':'/';
 checkApi();
 
 async function checkApi(){
@@ -557,3 +557,4 @@ function ocrGrade(conf){
 </script>
 </body>
 </html>
+              

@@ -843,6 +843,17 @@ def generate_draft_api(app_id: str):
     return {"draft_text": draft}
 
 
+def _content_disposition(fname: str, inline: bool = True) -> str:
+    """RFC 5987 호환 Content-Disposition — 한글·유니코드 파일명 안전 처리.
+    HTTP 헤더는 Latin-1만 허용하므로 ASCII fallback + UTF-8 인코딩 두 형태 모두 제공."""
+    from urllib.parse import quote as _q
+    fname = fname or "attachment"
+    ascii_fb = "".join(c if ord(c) < 128 and c not in '"\\' else "_" for c in fname) or "attachment"
+    encoded  = _q(fname, safe="")
+    disp = "inline" if inline else "attachment"
+    return f'{disp}; filename="{ascii_fb}"; filename*=UTF-8\'\'{encoded}'
+
+
 @app.get("/api/tuition/admin/applications/{app_id}/file")
 def get_application_file(app_id: str):
     """첨부 파일 서빙 — 1) file_token 디스크 우선, 2) 레거시 base64 fallback."""
@@ -861,7 +872,7 @@ def get_application_file(app_id: str):
         if loaded:
             raw, fname, mt = loaded
             return _Resp(content=raw, media_type=mt,
-                         headers={"Content-Disposition": f'inline; filename="{fname}"'})
+                         headers={"Content-Disposition": _content_disposition(fname)})
 
     # 2) 레거시: applications.json 인라인 base64
     fd = rec.get("file_data", "")
@@ -886,7 +897,7 @@ def get_application_file(app_id: str):
     else:
         mt = "image/jpeg"
     return _Resp(content=raw, media_type=mt,
-                 headers={"Content-Disposition": f'inline; filename="{fn or "attachment"}"'})
+                 headers={"Content-Disposition": _content_disposition(fn or "attachment")})
 
 
 # ══════════════════════════════════════════════════════════════
@@ -917,7 +928,7 @@ def serve_upload_by_token(token: str):
         raise HTTPException(status_code=404, detail="첨부 파일 없음")
     raw, fname, mt = loaded
     return _Resp(content=raw, media_type=mt,
-                 headers={"Content-Disposition": f'inline; filename="{fname}"'})
+                 headers={"Content-Disposition": _content_disposition(fname)})
 
 
 @app.delete("/api/tuition/admin/uploads/{token}")
