@@ -2211,9 +2211,11 @@ def _mbti_block(label: str, mbti: str) -> str:
 
 @app.post("/api/hrx/feedback-direct")
 async def hrx_feedback_direct(req: FeedbackDirectRequest):
-    """직접 작성 상황 텍스트 + MBTI → Claude 맞춤 Vocabulary (8개 섹션, truncation 방어)"""
+    """직접 작성 모드 — 8개 섹션 풍부 출력. 1~4/5~8 두 파트 병렬 호출로 truncation 원천 봉쇄."""
     if not req.situation_text or len(req.situation_text.strip()) < 20:
         raise HTTPException(status_code=400, detail="상황 텍스트가 너무 짧습니다.")
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY not configured")
 
     leader_block = _mbti_block("팀장(피드백 제공자)", req.leader_mbti)
     member_block = _mbti_block("팀원(피드백 수신자)", req.member_mbti)
@@ -2230,127 +2232,103 @@ async def hrx_feedback_direct(req: FeedbackDirectRequest):
 - 두 사람의 축이 다른 부분에서 발생할 수 있는 오해와 그 대응
 """.strip()
 
-    prompt = f"""당신은 한화투자증권 혁신(리더)지원실 소속 HR 코칭 전문가입니다. 아래 코칭 상황을 깊이 이해하고, 이 상황에 최적화된 피드백 Vocabulary Pool을 생성해 주세요.
+    SECTIONS_ALL = {
+        1: "상황 분석 요약 (이 상황의 핵심 코칭 포인트 3~4가지)",
+        2: "핵심 코칭 표현 (이 상황에서 가장 효과적인 표현 10개 이상)",
+        3: "절대 금기 표현 (이 상황에서 써선 안 되는 표현 5개 이상 — 이유 포함)",
+        4: "대화 오프닝 스크립트 (이 상황에 맞는 시작 문장 5개 이상)",
+        5: "완성형 피드백 문장 예시 (이 맥락이 담긴 완전한 문장 7개 이상)",
+        6: "성찰 유도 코칭 질문 (이 상황에 맞는 열린 질문 8개 이상)",
+        7: "마무리 · 동기부여 표현 (다음 행동으로 연결하는 마무리 5개 이상)",
+        8: "부드럽게 전달하는 대화 Tip (톤·타이밍·바디랭귀지·MBTI 적용 포인트 7개 이상 — 각 항목 한 줄 내외로 즉시 활용 가능하게)",
+    }
+
+    base_context = f"""당신은 한화투자증권 혁신(리더)지원실 소속 HR 코칭 전문가입니다. 아래 코칭 상황을 깊이 이해하고, 이 상황에 최적화된 피드백 Vocabulary Pool을 생성해 주세요.
 
 [코칭 상황]
 {req.situation_text}
 
-{mbti_section}
+{mbti_section}"""
 
-위 정보를 분석하여 다음 8개 섹션을 한국어로 작성해 주세요. 각 항목은 불릿(·)으로 구분하고, 이 상황의 맥락과 뉘앙스를 충분히 반영해 주세요.
+    def _build_part_prompt(part_sections, part_label):
+        sec_lines = "\n".join(f"## {n}. {SECTIONS_ALL[n]}" for n in part_sections)
+        return f"""{base_context}
 
-중요: 응답의 첫 줄에 전체 제목(예: "# 한국 기업 HR 코칭 Vocabulary Pool" 등)을 절대 추가하지 마세요. 아래 섹션 헤더(##)만 사용하세요. 마지막 8번 섹션의 마지막 문장까지 반드시 끝맺어 주세요.
+위 정보를 분석하여 다음 섹션들을 한국어로 풍부하게 작성해 주세요. 각 항목은 불릿(·)으로 구분하고 이 상황의 맥락과 뉘앙스를 충분히 반영해 주세요.
 
-## 1. 상황 분석 요약 (이 상황의 핵심 코칭 포인트 3~4가지)
-## 2. 핵심 코칭 표현 (이 상황에서 가장 효과적인 표현 10개 이상)
-## 3. 절대 금기 표현 (이 상황에서 써선 안 되는 표현 5개 이상 — 이유 포함)
-## 4. 대화 오프닝 스크립트 (이 상황에 맞는 시작 문장 5개 이상)
-## 5. 완성형 피드백 문장 예시 (이 맥락이 담긴 완전한 문장 7개 이상)
-## 6. 성찰 유도 코칭 질문 (이 상황에 맞는 열린 질문 8개 이상)
-## 7. 마무리 · 동기부여 표현 (다음 행동으로 연결하는 마무리 5개 이상)
-## 8. 부드럽게 전달하는 대화 Tip (톤·타이밍·바디랭귀지·MBTI 적용 포인트 7개 이상 — 각 항목 한 줄 내외로 즉시 활용 가능하게)
+중요:
+- 응답의 첫 줄에 전체 제목(예: '# Vocabulary Pool')을 절대 추가하지 마세요. 아래 섹션 헤더(##)만 사용하세요.
+- 이번 응답은 **{part_label}** 파트입니다. 아래 명시된 섹션만 작성하고 다른 번호는 절대 추가하지 마세요.
+- 마지막 섹션의 마지막 문장까지 반드시 끝맺어 주세요. 중간에 잘리면 안 됩니다.
+
+작성할 섹션:
+{sec_lines}
 
 모든 내용은 위 상황의 구체적 맥락을 반영하여 실제 사용 가능한 표현으로 작성해 주세요."""
 
-    if not ANTHROPIC_API_KEY:
-        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY not configured")
+    import asyncio as _asyncio
 
-    SECTION_TITLES = {
-        1: "상황 분석 요약",
-        2: "핵심 코칭 표현",
-        3: "절대 금기 표현",
-        4: "대화 오프닝 스크립트",
-        5: "완성형 피드백 문장 예시",
-        6: "성찰 유도 코칭 질문",
-        7: "마무리 · 동기부여 표현",
-        8: "부드럽게 전달하는 대화 Tip",
-    }
-
-    def _missing_sections(text: str):
-        found = set(re.findall(r"^##\s*(\d+)", text, re.MULTILINE))
-        return [n for n in range(1, 9) if str(n) not in found]
+    def _call_sync(prompt_text):
+        client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        msg = client.messages.create(
+            model=CHAT_MODEL,
+            max_tokens=8000,
+            messages=[{"role": "user", "content": prompt_text}],
+        )
+        text = msg.content[0].text if msg.content else ""
+        return text, msg.stop_reason
 
     try:
-        client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-        messages = [{"role": "user", "content": prompt}]
-        accumulated = ""
-        last_stop = None
+        prompt_part1 = _build_part_prompt([1, 2, 3, 4], "Part A (섹션 1~4)")
+        prompt_part2 = _build_part_prompt([5, 6, 7, 8], "Part B (섹션 5~8)")
 
-        # 1차 호출 — 8개 섹션 모두 시도
-        msg = client.messages.create(model=CHAT_MODEL, max_tokens=8000, messages=messages)
-        accumulated = msg.content[0].text if msg.content else ""
-        last_stop = msg.stop_reason
+        (text1, stop1), (text2, stop2) = await _asyncio.gather(
+            _asyncio.to_thread(_call_sync, prompt_part1),
+            _asyncio.to_thread(_call_sync, prompt_part2),
+        )
 
-        # 누락 섹션 검사 (1~3회 재요청)
-        for attempt in range(3):
-            missing = _missing_sections(accumulated)
-            if not missing:
-                break  # 모든 섹션 도달
-            # 다음 요청: 누락 섹션만 명시적으로 요청
-            missing_lines = "\n".join(f"## {n}. {SECTION_TITLES[n]}" for n in missing)
-            cont_prompt = (
-                f"이전 응답에서 다음 {len(missing)}개 섹션이 누락됐거나 미완성입니다: "
-                f"{', '.join(str(n)+'번' for n in missing)}.\n"
-                f"이 섹션들만 같은 형식(## 헤더 + 불릿)으로 끝까지 완전히 작성해 주세요. "
-                f"누락된 섹션 헤더는 다음과 같습니다:\n\n{missing_lines}\n\n"
-                f"새 제목이나 다른 섹션 반복 없이 위 누락 섹션만 출력하세요."
-            )
-            messages2 = [
-                {"role": "user", "content": prompt},
-                {"role": "assistant", "content": accumulated},
-                {"role": "user", "content": cont_prompt},
-            ]
-            msg2 = client.messages.create(model=CHAT_MODEL, max_tokens=8000, messages=messages2)
-            chunk2 = msg2.content[0].text if msg2.content else ""
-            last_stop = msg2.stop_reason
-            if not chunk2.strip():
-                break
-            accumulated += "\n\n" + chunk2
+        def _strip_title(t):
+            lines = t.split("\n")
+            out = []
+            for i, line in enumerate(lines):
+                s = line.strip()
+                if i == 0 and s.startswith("#") and not s.startswith("##"):
+                    continue
+                out.append(line)
+            return "\n".join(out).lstrip("\n")
 
-        # 정리: 첫 줄 단일 # 제목 제거 + 섹션 번호 순서 정렬
-        lines = accumulated.split("\n")
-        filtered = []
-        for i, line in enumerate(lines):
-            s = line.strip()
-            if i == 0 and s.startswith("#") and not s.startswith("##"):
-                continue
-            filtered.append(line)
-        result_text = "\n".join(filtered).lstrip("\n")
+        text1 = _strip_title(text1).rstrip()
+        text2 = _strip_title(text2).rstrip()
 
-        # 섹션 정렬 — 1~8 순서대로 다시 묶기 (continuation으로 추가된 섹션이 뒤에 붙는 경우 정렬)
-        sections = re.split(r"(?m)^(##\s*\d+\.[^\n]*)$", result_text)
-        if len(sections) > 1:
-            ordered = {}
-            preface = sections[0].strip()  # 보통 비어있음
-            for i in range(1, len(sections), 2):
-                header = sections[i]
-                body = sections[i+1] if i+1 < len(sections) else ""
-                m = re.match(r"##\s*(\d+)", header)
-                if m:
-                    n = int(m.group(1))
-                    # 같은 번호가 두 번 나오면 더 긴 본문 우선
-                    if n not in ordered or len(body) > len(ordered[n][1]):
-                        ordered[n] = (header.strip(), body.rstrip())
-            parts = []
-            if preface:
-                parts.append(preface)
-            for n in sorted(ordered.keys()):
-                parts.append(ordered[n][0] + "\n" + ordered[n][1])
+        combined = (text1 + "\n\n" + text2).strip() + "\n"
+        parts_split = re.split(r"(?m)^(##\s*\d+\.[^\n]*)$", combined)
+        ordered = {}
+        if len(parts_split) > 1:
+            for i in range(1, len(parts_split), 2):
+                header = parts_split[i]
+                body = parts_split[i+1] if i+1 < len(parts_split) else ""
+                m_n = re.match(r"##\s*(\d+)", header)
+                if not m_n:
+                    continue
+                n = int(m_n.group(1))
+                if n not in ordered or len(body) > len(ordered[n][1]):
+                    ordered[n] = (header.strip(), body.rstrip())
+            parts = [ordered[n][0] + "\n" + ordered[n][1] for n in sorted(ordered.keys())]
             result_text = "\n\n".join(parts).strip() + "\n"
+        else:
+            result_text = combined
 
-        sections_present = sorted(int(n) for n in re.findall(r"^##\s*(\d+)", result_text, re.MULTILINE))
-
+        sections_present = sorted(ordered.keys())
         return {
             "result":      result_text,
-            "stop_reason": last_stop,
+            "stop_reason": f"part1={stop1},part2={stop2}",
             "sections":    sections_present,
-            "complete":    sections_present == [1,2,3,4,5,6,7,8],
+            "complete":    sections_present == [1, 2, 3, 4, 5, 6, 7, 8],
             "leader_mbti": req.leader_mbti,
             "member_mbti": req.member_mbti,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 # ── HR X: 텔레그램 발송 ─────────────────────────────────────────
 # v2: 백엔드 ENV(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID) 자동 로드.
@@ -2365,12 +2343,28 @@ class FeedbackTelegramRequest(BaseModel):
 @app.get("/api/hrx/feedback-telegram/status")
 def hrx_feedback_telegram_status():
     """백엔드 텔레그램 자격증명 설정 여부 확인 (프론트 UI 분기용). 토큰 자체는 노출 X."""
-    has_token = bool(os.getenv("TELEGRAM_BOT_TOKEN", "").strip())
-    has_chat  = bool(os.getenv("TELEGRAM_CHAT_ID",   "").strip())
+    bt = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+    ci = os.getenv("TELEGRAM_CHAT_ID",   "").strip()
     return {
-        "configured":    has_token and has_chat,
-        "has_bot_token": has_token,
-        "has_chat_id":   has_chat,
+        "configured":    bool(bt and ci),
+        "has_bot_token": bool(bt),
+        "has_chat_id":   bool(ci),
+    }
+
+
+@app.get("/api/hrx/feedback-telegram/debug")
+def hrx_feedback_telegram_debug():
+    """ENV 적용 진단 — 토큰의 길이/앞4자리만 노출해 Render 환경변수 반영 여부 확인."""
+    def _mask(v):
+        v = (v or "").strip()
+        return {"present": bool(v), "length": len(v), "head4": v[:4] if v else ""}
+    related_keys = sorted([k for k in os.environ.keys() if "TELEGRAM" in k.upper() or "ANTHROPIC" in k.upper()])
+    return {
+        "TELEGRAM_BOT_TOKEN": _mask(os.getenv("TELEGRAM_BOT_TOKEN", "")),
+        "TELEGRAM_CHAT_ID":   _mask(os.getenv("TELEGRAM_CHAT_ID",   "")),
+        "ANTHROPIC_API_KEY":  _mask(os.getenv("ANTHROPIC_API_KEY",  "")),
+        "related_env_keys":   related_keys,
+        "total_env_count":    len(os.environ),
     }
 
 
