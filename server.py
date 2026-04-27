@@ -2295,18 +2295,38 @@ async def hrx_feedback_direct(req: FeedbackDirectRequest):
 
 
 # ── HR X: 텔레그램 발송 ─────────────────────────────────────────
+# v2: 백엔드 ENV(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID) 자동 로드.
+#     요청에 토큰 없으면 ENV 사용 — 프론트는 버튼만 누르면 발송.
 class FeedbackTelegramRequest(BaseModel):
-    bot_token: str       # 텔레그램 봇 토큰 (BotFather로 생성)
-    chat_id:   str       # 받을 채팅 ID (개인/그룹/채널)
+    bot_token: str = ""  # 빈 값이면 ENV TELEGRAM_BOT_TOKEN 사용
+    chat_id:   str = ""  # 빈 값이면 ENV TELEGRAM_CHAT_ID 사용
     title:     str = "Feedback Vocabulary"
     text:      str       # 마크다운 결과 본문
 
+
+@app.get("/api/hrx/feedback-telegram/status")
+def hrx_feedback_telegram_status():
+    """백엔드 텔레그램 자격증명 설정 여부 확인 (프론트 UI 분기용). 토큰 자체는 노출 X."""
+    has_token = bool(os.getenv("TELEGRAM_BOT_TOKEN", "").strip())
+    has_chat  = bool(os.getenv("TELEGRAM_CHAT_ID",   "").strip())
+    return {
+        "configured":    has_token and has_chat,
+        "has_bot_token": has_token,
+        "has_chat_id":   has_chat,
+    }
+
+
 @app.post("/api/hrx/feedback-telegram")
 async def hrx_feedback_telegram(req: FeedbackTelegramRequest):
-    """완성된 Feedback Vocabulary 결과를 Telegram으로 전송 (긴 문서는 분할 전송)."""
+    """완성된 Feedback Vocabulary 결과를 Telegram으로 전송 (긴 문서는 분할 전송).
+    bot_token/chat_id 비어 있으면 ENV(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID) 사용."""
     import httpx as _httpx
-    if not req.bot_token or not req.chat_id:
-        raise HTTPException(status_code=400, detail="bot_token / chat_id 필수")
+    req_bot_token = (req.bot_token or os.getenv("TELEGRAM_BOT_TOKEN", "")).strip()
+    req_chat_id   = (req.chat_id   or os.getenv("TELEGRAM_CHAT_ID",   "")).strip()
+    if not req_bot_token or not req_chat_id:
+        raise HTTPException(
+            status_code=400,
+            detail="bot_token/chat_id 누락 — 요청에 직접 넣거나 서버에 TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID 환경변수를 설정하세요.")
     if not req.text or len(req.text.strip()) < 10:
         raise HTTPException(status_code=400, detail="발송할 본문이 비어 있습니다.")
 
@@ -2329,13 +2349,13 @@ async def hrx_feedback_telegram(req: FeedbackTelegramRequest):
 
     sent = 0
     last_error = None
-    api_url = f"https://api.telegram.org/bot{req.bot_token}/sendMessage"
+    api_url = f"https://api.telegram.org/bot{req_bot_token}/sendMessage"
     async with _httpx.AsyncClient(timeout=20.0) as cli:
         for idx, ch in enumerate(chunks, 1):
             suffix = f"\n\n— ({idx}/{len(chunks)})" if len(chunks) > 1 else ""
             try:
                 r = await cli.post(api_url, json={
-                    "chat_id": req.chat_id,
+                    "chat_id": req_chat_id,
                     "text":    ch + suffix,
                     "parse_mode": "Markdown",
                     "disable_web_page_preview": True,

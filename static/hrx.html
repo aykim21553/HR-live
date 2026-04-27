@@ -882,10 +882,33 @@ async function generateDirectVocab(){
 }
 
 // ── 텔레그램 발송 ──
-function openTelegramModal(){
+// 백엔드(ENV) 자격증명 캐시 — 페이지 로드 시 1회 조회
+let _tgBackendConfigured = null;
+async function _checkTgBackendConfig(){
+  if (_tgBackendConfigured !== null) return _tgBackendConfigured;
+  try{
+    const r = await fetch('/api/hrx/feedback-telegram/status');
+    if (r.ok){
+      const d = await r.json();
+      _tgBackendConfigured = !!d.configured;
+    } else { _tgBackendConfigured = false; }
+  } catch { _tgBackendConfigured = false; }
+  return _tgBackendConfigured;
+}
+
+// 메인 텔레그램 버튼 — 백엔드 자격증명 있으면 원클릭 발송, 없으면 모달
+async function openTelegramModal(){
+  const outEl = document.getElementById('direct-out');
+  const text = outEl?.innerText?.trim() || '';
+  if (!text){ alert('먼저 Vocabulary를 생성해주세요.'); return; }
+
+  // 백엔드 ENV 설정돼 있으면 바로 발송
+  const backendOk = await _checkTgBackendConfig();
+  if (backendOk){ return _sendTgDirect(text); }
+
+  // 아니면 기존 모달 (사용자 입력 fallback)
   const m = document.getElementById('tg-modal');
   if (!m) return;
-  // 저장된 토큰·chat_id 복원
   try{
     const saved = JSON.parse(localStorage.getItem('hrx_tg') || '{}');
     if (saved.bot_token) document.getElementById('tg-bot-token').value = saved.bot_token;
@@ -894,6 +917,49 @@ function openTelegramModal(){
   }catch{}
   document.getElementById('tg-result').classList.add('hidden');
   m.classList.remove('hidden');
+}
+
+// 백엔드 자격증명으로 원클릭 발송 (토스트 알림)
+async function _sendTgDirect(text){
+  const btn = document.getElementById('direct-tg-btn');
+  if (!btn) return;
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:.9rem;animation:spin 1s linear infinite;">autorenew</span> 발송 중…';
+  try{
+    const res = await fetch('/api/hrx/feedback-telegram', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ title: '맞춤 Feedback Vocabulary', text })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok){
+      _toastTg(`✅ 텔레그램 발송 완료 — ${data.chunks_sent}/${data.total_chunks} 메시지`, 'ok');
+    } else {
+      _toastTg('❌ 발송 실패: ' + (data.detail || data.error || '서버 오류'), 'err');
+    }
+  } catch(e){
+    _toastTg('❌ 서버 오류: ' + e.message, 'err');
+  }
+  btn.disabled = false;
+  btn.innerHTML = orig;
+}
+
+// 우상단 토스트
+function _toastTg(msg, kind){
+  let t = document.getElementById('tg-toast');
+  if (!t){
+    t = document.createElement('div');
+    t.id = 'tg-toast';
+    t.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:0 12px 28px rgba(0,0,0,0.18);transition:opacity .25s;max-width:320px;';
+    document.body.appendChild(t);
+  }
+  t.style.background = kind === 'ok' ? 'linear-gradient(135deg,#0a5a3c,#0d6b47)' : 'linear-gradient(135deg,#7a1010,#9b1b1b)';
+  t.style.color = '#fff';
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>{ t.style.opacity = '0'; }, 4000);
 }
 function closeTelegramModal(){
   document.getElementById('tg-modal').classList.add('hidden');
