@@ -2255,26 +2255,59 @@ async def hrx_feedback_direct(req: FeedbackDirectRequest):
     if not ANTHROPIC_API_KEY:
         raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY not configured")
 
+    SECTION_TITLES = {
+        1: "상황 분석 요약",
+        2: "핵심 코칭 표현",
+        3: "절대 금기 표현",
+        4: "대화 오프닝 스크립트",
+        5: "완성형 피드백 문장 예시",
+        6: "성찰 유도 코칭 질문",
+        7: "마무리 · 동기부여 표현",
+        8: "부드럽게 전달하는 대화 Tip",
+    }
+
+    def _missing_sections(text: str):
+        found = set(re.findall(r"^##\s*(\d+)", text, re.MULTILINE))
+        return [n for n in range(1, 9) if str(n) not in found]
+
     try:
         client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
         messages = [{"role": "user", "content": prompt}]
         accumulated = ""
-        # truncation 방어: stop_reason != end_turn 이면 최대 2회 이어쓰기
-        for attempt in range(3):
-            msg = client.messages.create(
-                model=CHAT_MODEL,
-                max_tokens=8000,
-                messages=messages,
-            )
-            chunk = msg.content[0].text if msg.content else ""
-            accumulated += chunk
-            if msg.stop_reason == "end_turn":
-                break
-            # 이어쓰기 — assistant 응답을 history에 넣고 사용자가 "이어서" 요청
-            messages.append({"role": "assistant", "content": chunk})
-            messages.append({"role": "user", "content": "방금 응답이 중간에 끊겼습니다. 끊긴 부분부터 이어서 끝까지(특히 8번 섹션의 마지막 문장까지) 작성해 주세요. 새 제목·머리말 없이 바로 이어서만 작성하세요."})
+        last_stop = None
 
-        # 첫 줄이 # 단일 제목이면 제거
+        # 1차 호출 — 8개 섹션 모두 시도
+        msg = client.messages.create(model=CHAT_MODEL, max_tokens=8000, messages=messages)
+        accumulated = msg.content[0].text if msg.content else ""
+        last_stop = msg.stop_reason
+
+        # 누락 섹션 검사 (1~3회 재요청)
+        for attempt in range(3):
+            missing = _missing_sections(accumulated)
+            if not missing:
+                break  # 모든 섹션 도달
+            # 다음 요청: 누락 섹션만 명시적으로 요청
+            missing_lines = "\n".join(f"## {n}. {SECTION_TITLES[n]}" for n in missing)
+            cont_prompt = (
+                f"이전 응답에서 다음 {len(missing)}개 섹션이 누락됐거나 미완성입니다: "
+                f"{', '.join(str(n)+'번' for n in missing)}.\n"
+                f"이 섹션들만 같은 형식(## 헤더 + 불릿)으로 끝까지 완전히 작성해 주세요. "
+                f"누락된 섹션 헤더는 다음과 같습니다:\n\n{missing_lines}\n\n"
+                f"새 제목이나 다른 섹션 반복 없이 위 누락 섹션만 출력하세요."
+            )
+            messages2 = [
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": accumulated},
+                {"role": "user", "content": cont_prompt},
+            ]
+            msg2 = client.messages.create(model=CHAT_MODEL, max_tokens=8000, messages=messages2)
+            chunk2 = msg2.content[0].text if msg2.content else ""
+            last_stop = msg2.stop_reason
+            if not chunk2.strip():
+                break
+            accumulated += "\n\n" + chunk2
+
+        # 정리: 첫 줄 단일 # 제목 제거 + 섹션 번호 순서 정렬
         lines = accumulated.split("\n")
         filtered = []
         for i, line in enumerate(lines):
@@ -2284,9 +2317,34 @@ async def hrx_feedback_direct(req: FeedbackDirectRequest):
             filtered.append(line)
         result_text = "\n".join(filtered).lstrip("\n")
 
+        # 섹션 정렬 — 1~8 순서대로 다시 묶기 (continuation으로 추가된 섹션이 뒤에 붙는 경우 정렬)
+        sections = re.split(r"(?m)^(##\s*\d+\.[^\n]*)$", result_text)
+        if len(sections) > 1:
+            ordered = {}
+            preface = sections[0].strip()  # 보통 비어있음
+            for i in range(1, len(sections), 2):
+                header = sections[i]
+                body = sections[i+1] if i+1 < len(sections) else ""
+                m = re.match(r"##\s*(\d+)", header)
+                if m:
+                    n = int(m.group(1))
+                    # 같은 번호가 두 번 나오면 더 긴 본문 우선
+                    if n not in ordered or len(body) > len(ordered[n][1]):
+                        ordered[n] = (header.strip(), body.rstrip())
+            parts = []
+            if preface:
+                parts.append(preface)
+            for n in sorted(ordered.keys()):
+                parts.append(ordered[n][0] + "\n" + ordered[n][1])
+            result_text = "\n\n".join(parts).strip() + "\n"
+
+        sections_present = sorted(int(n) for n in re.findall(r"^##\s*(\d+)", result_text, re.MULTILINE))
+
         return {
             "result":      result_text,
-            "stop_reason": msg.stop_reason,
+            "stop_reason": last_stop,
+            "sections":    sections_present,
+            "complete":    sections_present == [1,2,3,4,5,6,7,8],
             "leader_mbti": req.leader_mbti,
             "member_mbti": req.member_mbti,
         }
