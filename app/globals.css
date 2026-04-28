@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: #f5f6f8;
+  color: #172026;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+::selection {
+  background: #0f5c63;
+  color: white;
+}
+
+/* ──────────────────────────────────────────────────────
+   HR X 글로벌 네비게이션
+────────────────────────────────────────────────────── */
+
+/* 상단 바 */
+.hrx-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e8ecef;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+}
+
+.hrx-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hrx-nav-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64727b;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.hrx-nav-back:hover { color: #172026; }
+
+.hrx-divider {
+  width: 1px;
+  height: 18px;
+  background: #d9e1e5;
+}
+
+.hrx-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #172026;
+}
+
+.hrx-brand-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #e84a1e;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.hrx-nav-agentic {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64727b;
+  text-decoration: none;
+  border: 1px solid #d9e1e5;
+  border-radius: 20px;
+  padding: 3px 10px;
+  transition: all 0.15s;
+}
+.hrx-nav-agentic:hover {
+  border-color: #0f5c63;
+  color: #0f5c63;
+  background: #e7f3f2;
+}
+
+.hrx-topbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.hrx-claude-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+/* 탭 바 */
+.hrx-tabbar {
+  position: sticky;
+  top: 48px;
+  z-index: 99;
+  background: #fafbfc;
+  border-bottom: 1px solid #e8ecef;
+  padding: 0 20px;
+}
+
+.hrx-tabbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 46px;
+}
+
+.hrx-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #64727b;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  cursor: pointer;
+  user-select: none;
+}
+.hrx-tab:hover:not(.hrx-tab-active) {
+  background: #f0f2f4;
+  color: #172026;
+}
+
+.hrx-tab-active {
+  background: #172026 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 8px rgba(23, 32, 38, 0.18);
+}
+
+.hrx-tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.hrx-dot-orange { background: #e84a1e; }
+.hrx-dot-blue   { background: #3b82f6; }
+.hrx-dot-teal   { background: #0f5c63; }
+
+/* 탭이 활성일 때 dot은 흰색으로 */
+.hrx-tab-active .hrx-tab-dot {
+  background: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* 기존 앱 콘텐츠가 sticky 바 높이만큼 오프셋되도록 */
+main.min-h-screen {
+  min-height: calc(100vh - 94px);
+}

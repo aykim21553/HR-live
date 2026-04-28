@@ -123,7 +123,7 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
           style="font-family:'Plus Jakarta Sans',sans-serif;">
         HR <span style="background:linear-gradient(135deg,#C2410C,#F97316,#FB923C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Intelligent</span> Tools
       </h1>
-      <p class="text-sm" style="color:#92400E;opacity:.8;">Feedback Vocabulary · Global HR Pool</p>
+      <p class="text-sm" style="color:#92400E;opacity:.8;">Feedback Vocabulary · Global HR Pool · HR Live</p>
     </div>
   </section>
 
@@ -132,6 +132,7 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
     <div class="max-w-6xl mx-auto px-6 py-2.5 flex gap-2 overflow-x-auto">
       <button class="tab-btn active" data-tab="vocab" onclick="switchTab('vocab')">💬 Feedback Vocabulary</button>
       <button class="tab-btn" data-tab="global" onclick="switchTab('global')">🌏 Global HR Pool</button>
+      <button class="tab-btn" data-tab="live" onclick="switchTab('live')">📺 HR Live</button>
     </div>
   </div>
 
@@ -613,6 +614,30 @@ h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;}
 
     </section>
 
+    <!-- TAB 3: HR LIVE -->
+    <section id="tab-live" class="tab-section hidden" style="margin:-28px -24px;padding:0;">
+      <div style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0f2027 100%);padding:14px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+        <span style="width:8px;height:8px;border-radius:50%;background:#ef4444;animation:liveBlinkAnim 1.2s infinite;display:inline-block;flex-shrink:0;"></span>
+        <span style="color:#fff;font-weight:800;font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-0.01em;">📺 HR Live — 노무전문가 토킹클럽</span>
+        <span style="margin-left:auto;font-size:11px;color:rgba(255,255,255,0.4);" id="live-url-hint"></span>
+      </div>
+      <div id="live-placeholder" style="display:none;padding:64px 24px;text-align:center;background:#f8fafc;">
+        <div style="font-size:48px;margin-bottom:16px;">📺</div>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:#0f172a;margin:0 0 8px;">HR Live 서버를 시작해 주세요</h3>
+        <p style="color:#64748b;font-size:13px;margin:0 0 20px;">로컬 HR Live 앱이 실행되어 있지 않습니다.</p>
+        <code style="display:inline-block;background:#1e293b;color:#7dd3fc;padding:10px 20px;border-radius:8px;font-size:13px;">npx next dev -p 3100</code>
+        <p style="color:#94a3b8;font-size:12px;margin:16px 0 0;">실행 후 아래 버튼을 눌러 다시 연결하세요.</p>
+        <button onclick="switchTab('live')" style="margin-top:14px;background:linear-gradient(135deg,#a14000,#FF6900);color:#fff;border:none;padding:10px 24px;border-radius:24px;font-weight:700;font-size:13px;cursor:pointer;">다시 시도</button>
+      </div>
+      <iframe
+        id="live-frame"
+        src="about:blank"
+        style="width:100%;height:calc(100vh - 150px);border:none;display:block;"
+        allow="microphone; autoplay"
+      ></iframe>
+      <style>@keyframes liveBlinkAnim{0%,100%{opacity:1}50%{opacity:.3}}</style>
+    </section>
+
   </div><!-- /max-w -->
 </main>
 
@@ -755,6 +780,29 @@ function switchTab(tab){
   document.querySelector('[data-tab="'+tab+'"]').classList.add('active');
   if(tab==='analytics'&&!window._analyticsLoaded)loadAnalytics();
   if(tab==='global'&&!window._globalLoaded){window._globalLoaded=true;initGlobal();}
+  if(tab==='live')loadLiveFrame();
+}
+
+function loadLiveFrame(){
+  const frame=document.getElementById('live-frame');
+  const ph=document.getElementById('live-placeholder');
+  const hint=document.getElementById('live-url-hint');
+  const liveUrl=window.HR_LIVE_URL||(
+    (location.hostname==='localhost'||location.hostname==='127.0.0.1')
+      ?'http://localhost:3100'
+      :null
+  );
+  if(!liveUrl){
+    frame.style.display='none';
+    ph.style.display='block';
+    hint.textContent='';
+    return;
+  }
+  if(frame.src===liveUrl||frame.src===liveUrl+'/'){return;}
+  hint.textContent=liveUrl;
+  frame.style.display='block';
+  ph.style.display='none';
+  frame.src=liveUrl;
 }
 
 // ════════════════════════════════════════════

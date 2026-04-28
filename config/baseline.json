@@ -1,0 +1,134 @@
+{
+  "companyName": "Flash Team",
+  "purpose": {
+    "ko": "해외 업체와의 개발/운영 계약 체결 시 당사 기준 조항을 일관되게 적용하기 위한 내부 기준입니다.",
+    "en": "This is the internal standard for consistently applying our preferred terms when contracting with overseas vendors for development and operations."
+  },
+  "playbook": [
+    {
+      "id": "scope-control",
+      "category": "Scope & Change Control",
+      "preferredPosition": {
+        "ko": "업무 범위, 인력 구성, 단가, 투입률 변경은 반드시 서면 승인 후 효력이 발생해야 합니다.",
+        "en": "Any change to scope, team composition, rates, or allocation must become effective only after prior written approval."
+      },
+      "requiredClauses": [
+        {
+          "ko": "변경 요청은 이메일 또는 서면 승인 전에는 효력이 없으며 소급 적용되지 않는다.",
+          "en": "Change requests are ineffective and non-retroactive unless approved by email or in writing."
+        },
+        {
+          "ko": "회사 승인이 없는 추가 인력 투입, 초과근무, 대기시간은 비용 청구 대상이 아니다.",
+          "en": "Unapproved staffing increases, overtime, and standby time are non-billable."
+        }
+      ],
+      "avoidClauses": [
+        {
+          "ko": "공급사가 일방적으로 인력/단가/범위를 조정할 수 있는 조항",
+          "en": "Clauses allowing the vendor to unilaterally change staffing, rates, or scope"
+        }
+      ]
+    },
+    {
+      "id": "billing-payment",
+      "category": "Billing & Payment",
+      "preferredPosition": {
+        "ko": "실제 승인된 작업시간만 후불 청구하며, 분쟁 금액은 보류 가능해야 합니다.",
+        "en": "Only approved actual working time should be invoiced in arrears, and disputed amounts should be withholdable."
+      },
+      "requiredClauses": [
+        {
+          "ko": "타임로그는 실제 시간 기준으로 기록되어야 하며 자동 반올림은 허용되지 않는다.",
+          "en": "Time logs must reflect actual time worked, with no automatic rounding up."
+        },
+        {
+          "ko": "회사는 분쟁 없는 금액만 우선 지급하고 분쟁 금액은 선의로 보류할 수 있다.",
+          "en": "The company may pay undisputed amounts while withholding disputed amounts in good faith."
+        }
+      ],
+      "avoidClauses": [
+        {
+          "ko": "분쟁 여부와 무관하게 전액 즉시 지급하도록 강제하는 조항",
+          "en": "Clauses requiring immediate full payment regardless of a bona fide dispute"
+        }
+      ]
+    },
+    {
+      "id": "resource-continuity",
+      "category": "Resource Continuity",
+      "preferredPosition": {
+        "ko": "핵심 인력의 지속성과 교체 통제권은 당사에 있어야 하며, 교체 비용과 인수인계 책임은 공급사가 부담해야 합니다.",
+        "en": "We should control key resource continuity and replacement, while the vendor bears replacement and knowledge transfer obligations."
+      },
+      "requiredClauses": [
+        {
+          "ko": "핵심 인력 교체는 당사 사전 승인이 필요하다.",
+          "en": "Replacement of key personnel requires our prior approval."
+        },
+        {
+          "ko": "교체 시 적절한 인수인계와 공백 최소화 조치를 공급사가 비용 부담 하에 수행한다.",
+          "en": "The vendor must ensure proper handover and minimize service gaps at its own cost."
+        }
+      ],
+      "avoidClauses": [
+        {
+          "ko": "공급사 재량으로 자유롭게 인력을 교체할 수 있는 조항",
+          "en": "Clauses allowing the vendor to freely rotate personnel at its discretion"
+        }
+      ]
+    },
+    {
+      "id": "ip-confidentiality",
+      "category": "IP & Confidentiality",
+      "preferredPosition": {
+        "ko": "업무 산출물과 관련 IP는 당사에 귀속되고, 공급사의 기존 기술은 제한적 목적에서만 사용 허락되어야 합니다.",
+        "en": "Work product and related IP should vest in us, while vendor background technology should be licensed only on a limited-use basis."
+      },
+      "requiredClauses": [
+        {
+          "ko": "업무 결과물 및 그 파생 산출물의 권리는 당사에 귀속된다.",
+          "en": "Rights in work product and derivative deliverables vest in the company."
+        },
+        {
+          "ko": "오픈소스 또는 제3자 라이선스 사용 시 사전 고지와 제한 조건 준수가 필요하다.",
+          "en": "Open-source or third-party components require prior disclosure and compliance with licensing restrictions."
+        }
+      ],
+      "avoidClauses": [
+        {
+          "ko": "공급사가 결과물에 대한 포괄적 재사용권을 보유하는 조항",
+          "en": "Clauses letting the vendor retain broad reuse rights over deliverables"
+        }
+      ]
+    },
+    {
+      "id": "termination-suspension",
+      "category": "Termination & Suspension",
+      "preferredPosition": {
+        "ko": "분쟁 중에도 서비스 중단은 제한되어야 하며, 종료 시 당사 보호 조치가 분명해야 합니다.",
+        "en": "Service suspension should be limited even during disputes, and termination protections should clearly favor the company."
+      },
+      "requiredClauses": [
+        {
+          "ko": "분쟁 금액만으로 전체 서비스 중단이 불가하고, 미지급 프로젝트 범위로만 제한된다.",
+          "en": "Suspension cannot extend to all services solely because of a dispute and must be limited to the unpaid project scope."
+        },
+        {
+          "ko": "종료 시 산출물, 접근권한, 자료 이전 및 협조 의무가 규정되어야 한다.",
+          "en": "Termination must include deliverable handover, access transfer, and transition assistance obligations."
+        }
+      ],
+      "avoidClauses": [
+        {
+          "ko": "공급사가 광범위하게 즉시 서비스를 중단할 수 있는 조항",
+          "en": "Clauses giving the vendor a broad immediate right to suspend services"
+        }
+      ]
+    }
+  ],
+  "referenceDocuments": [
+    "(2026.02.24)Outsourcing_General_Agreement_ 19032026_고용성제거.docx",
+    "SOW Staff Augmentation__final_1903_고용성이슈제거.docx",
+    "Template DA - Hanwha_final_1903_고용이슈제거.docx"
+  ]
+}
