@@ -1,5 +1,15 @@
 services:
-  # HR Live — Next.js 토킹클럽 앱
+  # hrroom — Node.js static server (server.js)
+  - type: web
+    name: hr-room
+    runtime: node
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  # hr-live — Next.js HR 토킹클럽
   - type: web
     name: hr-live
     runtime: node
