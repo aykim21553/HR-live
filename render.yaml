@@ -1,17 +1,5 @@
 services:
-  # ── 기존 서비스 (server.js / hrx.html) ──────────────────────
-  - type: web
-    name: hrroom
-    runtime: node
-    buildCommand: npm install
-    startCommand: node server.js
-    envVars:
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: NODE_ENV
-        value: production
-
-  # ── 신규 서비스 (HR Live Next.js 앱) ────────────────────────
+  # HR Live — Next.js 토킹클럽 앱
   - type: web
     name: hr-live
     runtime: node
