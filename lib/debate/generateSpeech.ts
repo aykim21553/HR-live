@@ -45,7 +45,7 @@ export async function generatePersonaSpeech(input: GeneratePersonaSpeechInput): 
       },
       {
         role: "user",
-        content: buildRoundInstruction(input.round, persona, input.question, input.issues, input.priorMessages.slice(-12))
+        content: buildRoundInstruction(input.round, persona, input.question, input.issues, input.priorMessages.slice(-4))
       }
     ]
   });

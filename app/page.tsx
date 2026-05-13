@@ -432,7 +432,7 @@ export default function HomePage() {
             </div>
             <p className="mt-3 text-[10px] font-black uppercase tracking-[0.15em] text-cyan-200">Live Status</p>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <StatBox label="발언" value={`${result?.messages.length ?? 0}/20`} />
+              <StatBox label="발언" value={`${result?.messages.length ?? 0}/${(result?.panels.length ?? selectedPanels.length) * 3}`} />
               <StatBox label="단계" value={roundLabel(currentRound)} />
             </div>
           </div>

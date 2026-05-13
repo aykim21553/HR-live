@@ -53,8 +53,11 @@ export async function POST(request: Request): Promise<Response> {
           controller.enqueue(sse(event));
           if (event.type === "speaker_chunk") {
             await sleep(4);
-          } else if (event.type === "speaker_started" || event.type === "round_started") {
+          } else if (event.type === "round_started") {
             await sleep(12);
+          } else if (event.type === "speaker_started") {
+            // 시연 안정성: API 호출 간 1.2초 간격으로 rate limit 회피
+            await sleep(1200);
           }
         }
       } catch (error) {

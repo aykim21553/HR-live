@@ -23,9 +23,9 @@ type ClaudeResponse = {
 };
 
 export const CLAUDE_MODELS = {
-  classifier: process.env.CLAUDE_MODEL_CLASSIFIER || "claude-sonnet-4-20250514",
-  debate: process.env.CLAUDE_MODEL_DEBATE || "claude-sonnet-4-20250514",
-  summary: process.env.CLAUDE_MODEL_SUMMARY || "claude-sonnet-4-20250514"
+  classifier: process.env.CLAUDE_MODEL_CLASSIFIER || "claude-haiku-4-5-20251001",
+  debate: process.env.CLAUDE_MODEL_DEBATE || "claude-haiku-4-5-20251001",
+  summary: process.env.CLAUDE_MODEL_SUMMARY || "claude-haiku-4-5-20251001"
 } as const;
 
 const MODEL_ALIASES: Record<string, string> = {
@@ -34,6 +34,11 @@ const MODEL_ALIASES: Record<string, string> = {
 };
 
 const MODEL_FALLBACKS: Record<string, string[]> = {
+  "claude-haiku-4-5-20251001": [
+    "claude-sonnet-4-20250514",
+    "claude-3-7-sonnet-20250219",
+    "claude-3-5-haiku-20241022"
+  ],
   "claude-3-5-haiku-20241022": [
     "claude-sonnet-4-20250514",
     "claude-3-7-sonnet-20250219",
@@ -117,6 +122,38 @@ export async function chatCompletion(input: ChatCompletionInput): Promise<string
       if (isModelNotFound(response.status, raw)) {
         lastModelError = `Claude 모델 ${model} 사용 불가: ${raw}`;
         continue;
+      }
+      // 429 rate limit: 한 번만 백오프 후 재시도 (시연 안정성)
+      if (response.status === 429) {
+        await new Promise((r) => setTimeout(r, 12000));
+        const retry = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01"
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: input.maxTokens ?? 1200,
+            temperature: input.temperature ?? 0.4,
+            system,
+            messages
+          })
+        });
+        const retryRaw = await retry.text();
+        if (retry.ok) {
+          try {
+            const payload2 = JSON.parse(retryRaw) as ClaudeResponse;
+            const text2 = payload2.content
+              ?.filter((block): block is ClaudeTextBlock => block.type === "text" && typeof (block as ClaudeTextBlock).text === "string")
+              .map((block) => block.text)
+              .join("\n")
+              .trim();
+            if (text2) return text2;
+          } catch {}
+        }
+        throw new Error(`Claude API 429 (retry 후에도 실패): ${retryRaw}`);
       }
       throw new Error(`Claude API ${response.status}: ${raw}`);
     }

@@ -1,16 +1,16 @@
 import type { PersonaId } from "@/lib/personas/types";
 
-// 7명 전원이 매 토론에 참석. 우선순위 순서로 발언.
-// (분야별 조건부 선별 로직은 카테고리 시그널 보존을 위해 유지하되, 최종 반환은 항상 전원.)
+// 7명 전원이 매 라운드 발언. 공인노무사(labor_consultant)가 클로징.
+// 흐름: 법(거시) → governance → CFO(비용) → 보상 → 조직개발 → HRBP → 노동법변호사 → 공인노무사(통합/마무리)
 export function selectPanel(_categories: string[], _question: string): PersonaId[] {
   const allPanels: PersonaId[] = [
-    "labor_attorney",
     "governance_law",
-    "hrbp",
-    "labor_consultant",
+    "finance_exec",
     "rewards_perf",
     "org_dev",
-    "finance_exec"
+    "hrbp",
+    "labor_attorney",
+    "labor_consultant"
   ];
   return allPanels;
 }
