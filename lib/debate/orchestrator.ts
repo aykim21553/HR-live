@@ -9,7 +9,7 @@ import type { DebateRound, DebateSession, FinalDecision, PersonaId } from "@/lib
 
 type MockDebateKey = keyof typeof mockDebates;
 type DebateSpeechRound = Extract<DebateRound, "round1" | "round2" | "round3">;
-const MAX_SPEAKER_EVENTS = 20;
+const MAX_SPEAKER_EVENTS = 30;
 
 export type DebateStartResult = DebateSession;
 
@@ -168,7 +168,7 @@ export async function startDebateSession(
 }
 
 function splitForSse(text: string): string[] {
-  const chunks = text.match(/.{1,56}(\s|$)/g);
+  const chunks = text.match(/.{1,90}(\s|$)/g);
   return chunks?.map((chunk) => chunk.trim()).filter(Boolean) ?? [text];
 }
 

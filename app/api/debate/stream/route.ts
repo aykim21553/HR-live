@@ -52,9 +52,9 @@ export async function POST(request: Request): Promise<Response> {
         for await (const event of runDebateStream({ question: question || session?.question || "", apiKey, session, modePreference })) {
           controller.enqueue(sse(event));
           if (event.type === "speaker_chunk") {
-            await sleep(12);
+            await sleep(4);
           } else if (event.type === "speaker_started" || event.type === "round_started") {
-            await sleep(45);
+            await sleep(12);
           }
         }
       } catch (error) {
